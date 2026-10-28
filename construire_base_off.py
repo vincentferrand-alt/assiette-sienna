@@ -101,6 +101,9 @@ def main():
     i_nomfr, i_marque = opt("product_name_fr"), opt("brands")
     i_taille, i_qte = opt("serving_size"), opt("serving_quantity")
     i_scans, i_compl, i_type = opt("unique_scans_n"), opt("completeness"), opt("pnns_groups_2")
+    i_pop = opt("popularity_tags")
+    CONTROLE = {"5449000000996": "Coca-Cola 33 cl", "3017620422003": "Nutella 400 g", "7622210449283": "Prince chocolat"}
+    raisons = {c: "absent de l'export" for c in CONTROLE}
     manquantes = [n for n in ("brands", "serving_size", "serving_quantity", "unique_scans_n", "pnns_groups_2") if n not in col]
     if manquantes:
         print("Attention, colonnes absentes (ignorées) :", ", ".join(manquantes))
@@ -137,23 +140,32 @@ def main():
 
     for ligne in enregistrements():
         lus += 1
-        if pays not in ligne:  # filtre rapide avant de découper la ligne
+        ctl = ligne[:ligne.find("\t")] if ligne[:1].isdigit() else ""
+        ctl = ctl if ctl in CONTROLE else ""
+        if pays not in ligne and not ctl:  # filtre rapide avant de découper la ligne
             continue
         champs = ligne.split("\t")
         if pays not in champs[i_pays].split(","):
+            if ctl: raisons[ctl] = "écarté : pays = " + champs[i_pays][:80]
             continue
         glu = f(champs[i_glu])
         if glu is None or glu < 0 or glu > 100:
+            if ctl: raisons[ctl] = "écarté : glucides = '%s'" % champs[i_glu][:20]
             continue
         nom = (champs[i_nomfr].strip() if i_nomfr is not None else "") or champs[i_nom].strip()
         code = champs[i_code].strip()
         if not nom or not code:
+            if ctl: raisons[ctl] = "écarté : nom vide"
             continue
+        if ctl: raisons[ctl] = "retenu à la lecture (scans=%s)" % (champs[i_scans] if i_scans is not None else "?")
         vus += 1
         marque = champs[i_marque].split(",")[0].strip() if i_marque is not None else ""
         per, lab = unite(champs[i_taille] if i_taille is not None else "", champs[i_qte] if i_qte is not None else "")
         typ = champs[i_type].strip() if i_type is not None else ""
         scans = f(champs[i_scans]) if i_scans is not None else None
+        if scans is None and i_pop is not None:  # popularité de secours : étiquettes « top-…-scans »
+            tags = champs[i_pop].split(",")
+            scans = sum(1 for t in tags if "scans" in t) + 2 * sum(1 for t in tags if "-fr-" in t and "scans" in t)
         compl = f(champs[i_compl]) if i_compl is not None else None
         score = ((scans or 0), (compl or 0))
         rec = (code, nom[:90], marque[:40], round(glu, 1), per, lab, typ)
@@ -170,21 +182,29 @@ def main():
     types = sorted({r[6] for r in produits if r[6] and r[6].lower() != "unknown"})
     idx = {t: i for i, t in enumerate(types)}
     p = [[r[0], r[1], r[2], r[3], r[4], r[5], idx.get(r[6], -1)] for r in produits]
+    gardes = {r[0] for r in p}
+    for c in CONTROLE:
+        if c in gardes:
+            raisons[c] = "présent"
+        elif raisons[c].startswith("retenu"):
+            raisons[c] = "écarté par le classement de popularité (" + raisons[c] + ")"
+    rapport = {"colonnes_absentes": manquantes, "lignes_lues": lus, "france_avec_glucides": vus,
+               "gardes": len(p), "mal_formees": mal_formes, "recollees": recolles,
+               "classement": "unique_scans_n" if i_scans is not None else ("popularity_tags" if i_pop is not None else "completeness"),
+               "controle": {CONTROLE[c]: raisons[c] for c in CONTROLE}}
     sortie = {
         "v": 2,
         "date": datetime.date.today().isoformat(),
         "source": "Open Food Facts — Open Database License (ODbL)",
         "champs": ["code", "nom", "marque", "glucides_100g", "poids_unite_g", "unite", "type"],
         "cats": types,
+        "rapport": rapport,
         "p": p,
     }
     with open(a.out, "w", encoding="utf-8") as out:
         json.dump(sortie, out, ensure_ascii=False, separators=(",", ":"))
     avec_unite = sum(1 for r in p if r[4] > 0)
-    codes = {r[0] for r in p}
-    for c, nom_c in (("5449000000996", "Coca-Cola 33 cl"), ("3017620422003", "Nutella 400 g"), ("7622210449283", "Prince chocolat")):
-        print("Contrôle %s : %s" % (nom_c, "présent" if c in codes else "ABSENT"))
-    print("Lignes recollées : %d" % recolles)
+    print("Rapport :", json.dumps(rapport, ensure_ascii=False, indent=1))
     print("Terminé en %.0f s : %d lignes lues, %d produits France avec glucides, %d gardés (%d avec poids d'unité), %d lignes mal formées."
           % (time.time() - t0, lus, vus, len(p), avec_unite, mal_formes))
     print("Fichier écrit :", a.out)

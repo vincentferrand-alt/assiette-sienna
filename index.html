@@ -5,9 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="L'assiette de Sienna">
+<meta name="apple-mobile-web-app-title" content="Mon assiette">
 <meta name="theme-color" content="#2f9e6e">
-<title>L'assiette de Sienna la Therian</title>
+<title>Mon assiette</title>
 <style>
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;height:100%;overflow:hidden;overscroll-behavior:none;font-family:"Segoe UI",system-ui,-apple-system,Roboto,sans-serif;background:#eef7f1;color:#233}
@@ -137,11 +137,11 @@ h1{margin:0;font-size:clamp(19px,5vw,26px);flex:1;line-height:1.15}
 
 <!-- ASSIETTE -->
 <section class="view on" id="v-plate">
-  <div class="top"><h1>🐾 L'assiette de Sienna la Therian</h1></div>
+  <div class="top"><h1 id="app-title" onclick="openTitle()" style="cursor:pointer">🍽️ Mon assiette</h1></div>
   <div class="hbar">
     <button class="hbtn" onclick="openHist()">📖 Historique</button>
     <button class="hbtn" onclick="toggleFS()">⛶ Plein écran</button>
-    <button class="hbtn" onclick="openSettings()">⚙️ Ma base</button>
+    <button class="hbtn" onclick="openSettings()">⚙️ Réglages</button>
   </div>
   <div class="total"><small>Total de glucides</small><div class="big"><span id="tot">0</span> <span>g</span></div></div>
   <div class="list scroll" id="list"></div>
@@ -240,17 +240,23 @@ h1{margin:0;font-size:clamp(19px,5vw,26px);flex:1;line-height:1.15}
 
 <!-- MODAL BASE PRODUITS -->
 <div class="modal" id="m-set"><div class="box">
-  <h2>⚙️ Ma base de produits</h2>
-  <p id="st-info"></p>
+  <h2>⚙️ Réglages</h2>
+  <button class="btn" style="font-size:18px;padding:12px;background:#fff;color:#245;box-shadow:0 3px 0 #cfe3d6" onclick="closeSettings();openTitle()">✏️ Changer le titre de l'appli</button>
+  <p id="st-info" style="margin-top:14px"></p>
   <div class="prog"><i id="st-bar"></i></div>
   <p id="st-msg" style="font-size:14px;color:#567;min-height:18px"></p>
-  <button class="btn blue" style="font-size:18px;padding:12px" onclick="loadFromSite()">🔄 Charger / mettre à jour depuis le site</button>
-  <input type="file" id="st-file" accept=".json,.gz,application/json,application/gzip" style="display:none" onchange="importFile(this)">
-  <button class="btn" style="font-size:18px;padding:12px;background:#fff;color:#245;box-shadow:0 3px 0 #cfe3d6" onclick="$('st-file').click()">📂 Importer le fichier produits-off.json</button>
+  <button class="btn blue" style="font-size:18px;padding:12px" onclick="autoUpdateBase(true)">🔄 Mettre à jour les produits maintenant</button>
   <p id="st-extra" style="font-size:13px;color:#789"></p>
-  <div class="two"><button class="btn grey" onclick="closeSettings()">Fermer</button><button class="btn red" style="font-size:16px" onclick="clearBase()">🗑️ Vider</button></div>
-  <p style="font-size:12px;color:#789">Le fichier contient seulement : nom, marque, glucides pour 100 g, poids d'une unité et type d'aliment (source Open Food Facts, licence ODbL).</p>
+  <div class="two"><button class="btn grey" onclick="closeSettings()">Fermer</button></div>
+  <p style="font-size:12px;color:#789">Les produits se mettent à jour tout seuls quand l'appli est ouverte avec internet. Données : <a href="https://openfoodfacts.org" target="_blank" rel="noopener">Open Food Facts</a> (licence ODbL) et table Ciqual de l'Anses (Licence Ouverte). Valeurs indicatives, à vérifier sur l'étiquette.</p>
 </div></div>
+<div class="modal" id="m-title"><div class="box">
+  <h2>✏️ Titre de l'appli</h2>
+  <div class="emojis" id="t-emo" style="justify-content:center;flex-wrap:wrap"></div>
+  <input class="t" id="t-in" maxlength="40" placeholder="L'assiette de …" style="margin-top:8px">
+  <div class="two"><button class="btn grey" onclick="closeM('m-title')">Annuler</button><button class="btn green" onclick="saveTitle()">OK</button></div>
+</div></div>
+<div id="toast" style="display:none;position:fixed;left:50%;bottom:max(14px,env(safe-area-inset-bottom));transform:translateX(-50%);background:#233;color:#fff;border-radius:16px;padding:8px 14px;font-size:14px;font-weight:600;z-index:30;max-width:92vw;text-align:center"></div>
 
 <script>
 /* ---------- DONNÉES ----------
@@ -555,14 +561,6 @@ function renderGrid(){
       const seen=new Set(),uniq=arr=>arr.filter(f=>{if(seen.has(f.k))return false;seen.add(f.k);return true});
       const mine=uniq([...CUR,...customFoods(),...favs].filter(f=>m.test(norm(f.n))));
       if(mine.length){h+='<div class="sec">⭐ Ma liste</div>';addList(mine)}
-      if(!QN.length)Q.forEach(x=>QN.push(norm(x[1])));
-      const hits=[];
-      for(let i=0;i<Q.length;i++){if(CURCODES.has(Q[i][0]))continue;const n=QN[i];if(m.test(n))hits.push([n.startsWith(m.first)?0:1,Q[i][1].length,i])}
-      hits.sort((a,b)=>a[0]-b[0]||a[1]-b[1]);
-      const lim=showAllQ?80:12;
-      const ciq=uniq(hits.slice(0,lim).map(([,,i])=>{const x=Q[i];return {k:'q'+x[0],e:iconFor(x[1],x[3]),n:x[1],c:x[2],g:defaultG(x[3]),src:'ciqual',u:0,ul:''}}));
-      if(ciq.length){h+='<div class="sec">📚 Aliments de base (table Ciqual)</div>';addList(ciq)}
-      if(hits.length>lim&&!showAllQ)h+=`<div class="wide"><button class="btn small" style="width:100%;color:#245" onclick="showAllQ=true;renderGrid()">Voir plus d'aliments de base (${hits.length})</button></div>`;
       const loc=searchBase(m,40);lastLocalCom=loc.total;
       const online=(onl.q===raw?onl.recs:[]).map(recItem);
       const com=uniq([...loc.items,...online]);
@@ -573,6 +571,14 @@ function renderGrid(){
       else if(st==='err')h+=`<div class="note wide">⚠️ Open Food Facts ne répond pas pour l'instant.<br><button class="btn small" style="color:#245" onclick="runOnline($('q').value.trim(),true)">🔄 Réessayer</button></div>`;
       else if(st==='done'){if(!com.length)h+='<div class="note wide">Aucun produit trouvé. Essaie le scan ou « Étiquette du paquet ».</div>'}
       else h+=`<div class="wide"><button class="btn small" style="width:100%;color:#245" onclick="runOnline($('q').value.trim(),true)">🔎 Chercher aussi en ligne (Open Food Facts)</button></div>`;
+      if(!QN.length)Q.forEach(x=>QN.push(norm(x[1])));
+      const hits=[];
+      for(let i=0;i<Q.length;i++){if(CURCODES.has(Q[i][0]))continue;const n=QN[i];if(m.test(n))hits.push([n.startsWith(m.first)?0:1,Q[i][1].length,i])}
+      hits.sort((a,b)=>a[0]-b[0]||a[1]-b[1]);
+      const lim=showAllQ?80:12;
+      const ciq=uniq(hits.slice(0,lim).map(([,,i])=>{const x=Q[i];return {k:'q'+x[0],e:iconFor(x[1],x[3]),n:x[1],c:x[2],g:defaultG(x[3]),src:'ciqual',u:0,ul:''}}));
+      if(ciq.length){h+='<div class="sec">📚 Aliments de base (table Ciqual)</div>';addList(ciq)}
+      if(hits.length>lim&&!showAllQ)h+=`<div class="wide"><button class="btn small" style="width:100%;color:#245" onclick="showAllQ=true;renderGrid()">Voir plus d'aliments de base (${hits.length})</button></div>`;
     }
   }else{
     if(cat==='fav')addList(favs.slice());
@@ -982,16 +988,25 @@ function reuseMeal(i){
 }
 function delMeal(i){ask('Effacer ce repas de l\'historique ?',()=>{hist.splice(i,1);save('mp_hist',hist);renderHist()})}
 
-/* ---------- MA BASE DE PRODUITS : chargement du fichier produits-off.json ----------
- Le fichier est fabriqué à partir de l'export officiel d'Open Food Facts par construire_base_off.py
- (à la main sur un ordinateur, ou automatiquement par GitHub). */
+/* ---------- TITRE DE L'APPLI (chaque famille met le sien) ---------- */
+const TEMO=['🍽️','🐾','🐱','🐶','🦊','🐺','🦄','🐰','🐼','🦁','🐸','🌈','⭐','💖','⚽','🎀'];
+let titleCfg=load('mp_title',{e:'🍽️',t:'Mon assiette'}),tEmo=titleCfg.e;
+function applyTitle(){const t=(titleCfg.e?titleCfg.e+' ':'')+titleCfg.t;$('app-title').textContent=t;document.title=titleCfg.t}
+function openTitle(){tEmo=titleCfg.e;$('t-in').value=titleCfg.t;renderTEmo();$('m-title').classList.add('on')}
+function renderTEmo(){$('t-emo').innerHTML=TEMO.map(e=>`<button class="${e===tEmo?'on':''}" onclick="tEmo='${e}';renderTEmo()">${e}</button>`).join('')}
+function saveTitle(){const t=$('t-in').value.trim();titleCfg={e:tEmo,t:t||'Mon assiette'};save('mp_title',titleCfg);applyTitle();closeM('m-title')}
+
+/* ---------- PRODUITS DU COMMERCE : mise à jour automatique ----------
+ Le fichier produits-off.json est à côté de l'appli sur le site (fabriqué par GitHub depuis Open Food Facts).
+ À l'ouverture, avec internet, l'appli vérifie (au plus toutes les 12 h) s'il a changé et le recharge en arrière-plan. */
 function fmtDate(d){const x=new Date(d);return isNaN(x)?String(d):x.toLocaleDateString('fr-FR')}
+function toast(t,ms){const e=$('toast');e.textContent=t;e.style.display=t?'block':'none';clearTimeout(e._t);if(t&&ms)e._t=setTimeout(()=>e.style.display='none',ms)}
 function openSettings(){$('st-msg').textContent='';$('st-bar').style.width='0';renderSettings();$('m-set').classList.add('on')}
 function closeSettings(){closeM('m-set')}
 function renderSettings(){
   const b=BASEINFO;
-  $('st-info').innerHTML=b&&b.n?'📦 <b>'+b.n.toLocaleString('fr-FR')+'</b> produits Open Food Facts'+(b.date?' (fichier du '+esc(fmtDate(b.date))+')':''):'📦 Le fichier des produits n\'est pas encore chargé.';
-  $('st-extra').textContent='En tout dans l\'appli : '+BASE.length.toLocaleString('fr-FR')+' produits (avec ceux cherchés ou scannés).';
+  $('st-info').innerHTML=b&&b.n?'🛒 <b>'+b.n.toLocaleString('fr-FR')+'</b> produits du commerce'+(b.date?' (mis à jour le '+esc(fmtDate(b.date))+')':''):'🛒 Les produits du commerce ne sont pas encore chargés.';
+  $('st-extra').textContent=BASE.length?'En tout : '+BASE.length.toLocaleString('fr-FR')+' produits (avec ceux scannés ou cherchés en ligne).':'';
 }
 async function readJSON(resp){
   const total=+resp.headers.get('content-length')||0;
@@ -1005,47 +1020,38 @@ async function readJSON(resp){
   }
   return JSON.parse(await new Blob(chunks).text());
 }
-async function loadFromSite(){
-  const msg=$('st-msg');msg.textContent='Connexion…';$('st-bar').style.width='3%';
+let updRunning=false;
+async function autoUpdateBase(force){
+  if(updRunning)return;
+  const msg=t=>{$('st-msg').textContent=t};
+  if(!/^https?:$/.test(location.protocol)){if(force)msg('Mise à jour possible seulement depuis le site en ligne.');return}
+  const last=load('mp_base_chk',0),have=!!(BASEINFO&&BASEINFO.n&&BASE.length>=Math.min(1000,BASEINFO.n));
+  if(!force&&have&&Date.now()-last<12*3600e3)return;
+  updRunning=true;
   try{
-    if(location.protocol==='file:')throw new Error('file');
-    const r=await fetch('produits-off.json?t='+Date.now(),{cache:'no-store'});
+    if(force){msg('Vérification…');$('st-bar').style.width='3%'}
+    const h=await fetch('produits-off.json',{method:'HEAD',cache:'no-store'});
+    if(!h.ok)throw new Error('HTTP '+h.status);
+    const tag=h.headers.get('etag')||h.headers.get('last-modified')||'';
+    save('mp_base_chk',Date.now());
+    if(have&&tag&&tag===load('mp_base_tag','')){if(force){msg('Les produits sont déjà à jour ✅');$('st-bar').style.width='100%'}return}
+    toast('📦 Mise à jour des produits…');
+    const r=await fetch('produits-off.json',{cache:'no-store'});
     if(!r.ok)throw new Error('HTTP '+r.status);
     const data=await readJSON(r);
-    msg.textContent='J\'enregistre les produits…';$('st-bar').style.width='95%';
+    msg('J\'enregistre les produits…');$('st-bar').style.width='95%';
     await baseImport(data);
-    $('st-bar').style.width='100%';msg.textContent='Terminé ✅ '+data.p.length.toLocaleString('fr-FR')+' produits chargés.';
+    save('mp_base_tag',tag);
+    $('st-bar').style.width='100%';msg('Terminé ✅ '+data.p.length.toLocaleString('fr-FR')+' produits.');
+    toast('✅ '+data.p.length.toLocaleString('fr-FR')+' produits à jour',3000);
   }catch(e){
-    $('st-bar').style.width='0';
-    msg.textContent=e.message==='file'?'L\'appli est ouverte depuis un fichier : utilise « 📂 Importer le fichier ».'
-      :e.message==='format'?'Le fichier n\'a pas le bon format.'
-      :'Fichier produits-off.json introuvable à côté de l\'appli ('+e.message+'). Mets-le dans le même dossier en ligne, ou importe-le.';
-  }
-  renderSettings();
+    toast('',0);
+    if(force){$('st-bar').style.width='0';msg(e.message==='format'?'Le fichier des produits n\'a pas le bon format.':'Pas de connexion au site pour l\'instant ('+e.message+').')}
+  }finally{updRunning=false;renderSettings()}
 }
-async function importFile(inp){
-  const f=inp.files&&inp.files[0];inp.value='';if(!f)return;
-  const msg=$('st-msg');msg.textContent='Lecture du fichier…';$('st-bar').style.width='30%';
-  try{
-    let text;
-    if(/\.gz$/i.test(f.name)){
-      if(!window.DecompressionStream)throw new Error('gz');
-      text=await new Response(f.stream().pipeThrough(new DecompressionStream('gzip'))).text();
-    }else text=await f.text();
-    const data=JSON.parse(text);
-    msg.textContent='J\'enregistre les produits…';$('st-bar').style.width='70%';
-    await baseImport(data);
-    $('st-bar').style.width='100%';msg.textContent='Terminé ✅ '+data.p.length.toLocaleString('fr-FR')+' produits chargés.';
-  }catch(e){$('st-bar').style.width='0';msg.textContent=e.message==='gz'?'Ce navigateur ne sait pas ouvrir les .gz : prends le fichier .json.':'Fichier illisible ou pas au bon format.'}
-  renderSettings();
-}
-function clearBase(){ask('Vider la base de produits ?',async()=>{
-  memReset();BASECATS=[];BASEINFO=null;save('mp_base_info',null);onlineCache.clear();
-  if(idb){await idbReq('kv','readwrite',s=>s.delete('bulk'));await idbReq('p','readwrite',s=>s.clear())}
-  renderSettings();$('st-msg').textContent='Base vidée.';
-})}
 
-baseLoad();
+applyTitle();
+baseLoad().then(()=>autoUpdateBase(false));
 renderPlate();
 </script>
 </body>
