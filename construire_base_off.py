@@ -21,7 +21,16 @@ import argparse, datetime, gzip, heapq, io, json, re, sys, time, urllib.request
 
 URL = "https://static.openfoodfacts.org/data/en.openfoodfacts.org.products.csv.gz"
 UA = "LassietteDeSienna/1.0 (usage personnel, base glucides)"
-EXCLUS = re.compile(r"^(g|gr|grs|grammes?|ml|cl|dl|kg|l|oz|mg)\.?$")
+EXCLUS = re.compile(r"^(g|gr|grs|gram|grams|gramme|grammes|ml|cl|dl|l|litre|litres|liter|liters|kg|oz|oza|onz|fl\.? ?oz|mg)(\b|\.|$)")
+TRAD = {"serving": "portion", "servings": "portion", "piece": "pièce", "pieces": "pièce", "bar": "barre", "slice": "tranche",
+        "tbsp": "cuillère à soupe", "tbsp.": "cuillère à soupe", "tablespoon": "cuillère à soupe", "tsp": "cuillère à café",
+        "teaspoon": "cuillère à café", "cup": "tasse", "bottle": "bouteille", "pack": "paquet", "package": "paquet",
+        "packet": "paquet", "can": "canette", "can drained": "boîte", "bag": "sachet", "scoop": "boule", "container": "pot",
+        "square": "carré", "cake": "gâteau", "box": "boîte", "stick": "bâtonnet", "chip": "chips", "pouch": "gourde",
+        "glass": "verre", "bun": "pain", "sausage": "saucisse", "roll": "rouleau", "egg": "œuf", "jar": "pot", "bowl": "bol",
+        "waffle": "gaufre", "sweet": "bonbon", "wafer": "gaufrette", "tablet": "tablette", "block": "bloc", "ball": "boule",
+        "dumpling": "ravioli", "biscuits": "biscuit", "cookies": "cookie"}
+MIN_UNITE = 3.0  # en dessous, le poids d'une unité est jugé peu fiable et ignoré
 
 
 def f(x):
@@ -49,6 +58,7 @@ def unite(taille, quantite):
         cnt = f(m.group(1))
         if w and len(w) < 25 and not EXCLUS.match(w) and cnt and cnt > 0:
             lab = w if cnt == 1 else singulier(w)
+            lab = TRAD.get(lab, lab)
             n = cnt
     if not q or q <= 0:
         m2 = re.search(r"(\d+(?:[.,]\d+)?)\s*(g|gr|ml)\b", txt, re.I)
@@ -57,7 +67,7 @@ def unite(taille, quantite):
     if not q or q <= 0 or q > 1500:
         return 0, ""
     per = round(q / n, 1)
-    return (per, lab) if per >= 1 else (0, "")
+    return (per, lab) if per >= MIN_UNITE else (0, "")
 
 
 def ouvrir(source):
@@ -98,15 +108,38 @@ def main():
     ncol = len(entete)
     pays = a.pays
     tas, seq = [], 0
-    vus = lus = mal_formes = 0
-    for ligne in fh:
+    vus = lus = mal_formes = recolles = 0
+    debut = re.compile(r"^\d+\thttps?://")
+
+    def enregistrements():
+        """Rend une ligne par produit, en recollant les lignes coupées par un retour à la ligne dans un champ."""
+        nonlocal mal_formes, recolles
+        tampon = None
+        for brut in fh:
+            brut = brut.rstrip("\r\n")
+            if tampon is None:
+                tampon = brut
+            elif debut.match(brut):  # un nouveau produit commence : le précédent était incomplet
+                mal_formes += 1
+                tampon = brut
+            else:
+                tampon += " " + brut
+                recolles += 1
+            n = tampon.count("\t")
+            if n == ncol - 1:
+                yield tampon
+                tampon = None
+            elif n > ncol - 1:
+                mal_formes += 1
+                tampon = None
+        if tampon is not None:
+            mal_formes += 1
+
+    for ligne in enregistrements():
         lus += 1
         if pays not in ligne:  # filtre rapide avant de découper la ligne
             continue
-        champs = ligne.rstrip("\n").split("\t")
-        if len(champs) != ncol:
-            mal_formes += 1
-            continue
+        champs = ligne.split("\t")
         if pays not in champs[i_pays].split(","):
             continue
         glu = f(champs[i_glu])
@@ -148,6 +181,10 @@ def main():
     with open(a.out, "w", encoding="utf-8") as out:
         json.dump(sortie, out, ensure_ascii=False, separators=(",", ":"))
     avec_unite = sum(1 for r in p if r[4] > 0)
+    codes = {r[0] for r in p}
+    for c, nom_c in (("5449000000996", "Coca-Cola 33 cl"), ("3017620422003", "Nutella 400 g"), ("7622210449283", "Prince chocolat")):
+        print("Contrôle %s : %s" % (nom_c, "présent" if c in codes else "ABSENT"))
+    print("Lignes recollées : %d" % recolles)
     print("Terminé en %.0f s : %d lignes lues, %d produits France avec glucides, %d gardés (%d avec poids d'unité), %d lignes mal formées."
           % (time.time() - t0, lus, vus, len(p), avec_unite, mal_formes))
     print("Fichier écrit :", a.out)
