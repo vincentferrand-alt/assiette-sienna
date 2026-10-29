@@ -46,7 +46,8 @@ h1{margin:0;font-size:clamp(19px,5vw,26px);flex:1;line-height:1.15}
 .btn.small{width:auto;font-size:16px;padding:10px 16px;background:#fff;color:#a33;box-shadow:0 2px 0 #e3c9c9;border-radius:16px;margin:0}
 .btn:disabled{opacity:.45}
 .foot{font-size:11px;color:#789;text-align:center;margin:6px 6px 0;line-height:1.35;flex:none}
-.tools{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;flex:none}
+.tools{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:8px;flex:none}
+.remote{background:#3b82e0;color:#fff;border-radius:14px;padding:6px 10px;font-weight:700;font-size:15px;text-align:center;margin-bottom:8px;flex:none}
 .tool{background:#fff;border-radius:18px;padding:8px 4px;font-size:15px;font-weight:700;line-height:1.15;box-shadow:0 3px 0 #d5e7db;color:#233}
 .tool span{display:block;font-size:30px;margin-bottom:1px}
 .tool:active{transform:translateY(2px)}
@@ -200,7 +201,7 @@ body.compact .total .big{font-size:clamp(36px,7vh,52px)}
   <div class="top"><h1 id="app-title" onclick="if(!locked())openTitle()" style="cursor:pointer">🍽️ Mon assiette</h1></div>
   <div class="hbar">
     <button class="hbtn" id="hist-btn" onclick="openHist()">📖 Historique</button>
-    <button class="hbtn" onclick="toggleFS()">⛶ Plein écran</button>
+    <button class="hbtn" id="fs-btn" onclick="toggleFS()">⛶ Plein écran</button>
     <button class="hbtn" onclick="openSettings()">⚙️ Réglages</button>
   </div>
   <div class="total"><small>Total de glucides</small><div class="big"><span id="tot">0</span> <span>g</span></div></div>
@@ -213,11 +214,13 @@ body.compact .total .big{font-size:clamp(36px,7vh,52px)}
 
 <!-- CHOIX ALIMENT -->
 <section class="view" id="v-pick">
-  <div class="top"><button class="back" onclick="show('plate')">← Retour</button><h1>Quel aliment ?</h1></div>
+  <div class="top"><button class="back" onclick="pickBack()">← Retour</button><h1 id="pick-title">Quel aliment ?</h1></div>
   <div class="tools">
-    <button class="tool" onclick="openScan()"><span>📷</span>Scanner un code-barres</button>
-    <button class="tool" onclick="openLabel()"><span>✖️</span>Étiquette du paquet</button>
+    <button class="tool" onclick="openScan()"><span>📷</span>Scanner</button>
+    <button class="tool" onclick="openLabel()"><span>✖️</span>Étiquette</button>
+    <button class="tool" onclick="openDirect()"><span>🔢</span>Glucides directs</button>
   </div>
+  <div class="remote" id="remote-bar" style="display:none"></div>
   <input class="search" id="q" placeholder="🔍 Chercher (pomme, pâtes, BN, Nutella…)" oninput="onSearch()" autocomplete="off" autocapitalize="off" spellcheck="false">
   <div class="cats" id="cats"></div>
   <div class="grid scroll" id="grid"></div>
@@ -309,6 +312,7 @@ body.compact .total .big{font-size:clamp(36px,7vh,52px)}
   <p id="st-msg" style="font-size:14px;color:#567;min-height:18px"></p>
   <button class="btn blue" style="font-size:18px;padding:12px" onclick="autoUpdateBase(true)">🔄 Mettre à jour les produits maintenant</button>
   <p id="st-extra" style="font-size:13px;color:#789"></p>
+  <div id="st-errs" style="text-align:left;font-size:12px;color:#789;margin:6px 0"></div>
   <div class="two"><button class="btn grey" onclick="closeSettings()">Fermer</button></div>
   <p style="font-size:12px;color:#789">Les produits se mettent à jour tout seuls quand l'appli est ouverte avec internet. Données : <a href="https://openfoodfacts.org" target="_blank" rel="noopener">Open Food Facts</a> (licence ODbL) et table Ciqual de l'Anses (Licence Ouverte). Valeurs indicatives, à vérifier sur l'étiquette.</p>
 </div></div>
@@ -422,7 +426,7 @@ const H=60;
 
 function show(v){
   document.querySelectorAll('.view').forEach(e=>e.classList.remove('on'));$('v-'+v).classList.add('on');
-  if(v==='plate')renderPlate();if(v==='pick')renderPick();
+  if(v==='plate'){remoteTarget=null;renderPlate()}if(v==='pick'){remoteUI();renderPick()}
   document.querySelectorAll('.scroll').forEach(s=>{if(s.closest('#v-'+v)&&v!=='pick')s.scrollTop=0});
 }
 function closeM(id){$(id).classList.remove('on')}
@@ -449,7 +453,7 @@ function toggleFS(){
 }
 
 /* ---------- ASSIETTE ---------- */
-function qtxt(p){return p.q!=null&&p.u?`${fr(p.q)} × ${p.ul||'unité'} · ${fr(p.g)} g`:`${fr(p.g)} g`}
+function qtxt(p){if(p.src==='direct')return 'saisie directe'+(p.par?' · par '+p.par:'');return (p.par?'par '+p.par+' · ':'')+(p.q!=null&&p.u?`${fr(p.q)} × ${p.ul||'unité'} · ${fr(p.g)} g`:`${fr(p.g)} g`)}
 function renderPlate(){
   let tot=0;
   $('list').innerHTML=plate.length?plate.map((p,i)=>{const c=p.g*p.c/100;tot+=c;
@@ -587,6 +591,7 @@ async function onlineSearch(q,legacy){
 
 /* ---------- CHOIX / RECHERCHE EN DIRECT ---------- */
 let qTok=0, onl={state:'idle',recs:[],q:''}, qTimer=0, showAllQ=false, lastQ='', lastLocalCom=0;
+function pickBack(){if(remoteTarget){remoteTarget=null;openHist()}else show('plate')}
 function openPick(){editIdx=-1;$('q').value='';lastQ='';onl={state:'idle',recs:[],q:''};cat=favs.length?'fav':(cat==='fav'?'fec':cat);show('pick')}
 function isFav(k){return favs.some(f=>f.k===k)}
 function customFoods(){return custom.map(f=>({k:'m'+f.n,e:f.e||iconFor(f.n,'','✏️'),n:f.n,c:f.c,g:f.g||100,src:'perso',u:0,ul:''}))}
@@ -704,7 +709,7 @@ function openWeight(o){
   const w=$('w-warn');
   if((cur.src==='off'||cur.src==='label')&&rawWarn(cur.n)){w.style.display='block';w.textContent='⚠️ Valeur du produit CRU (non cuit). Pèse-le avant la cuisson, ou choisis « cuit » dans les féculents.'}
   else w.style.display='none';
-  $('w-ok').textContent=editIdx>=0?'✅ Enregistrer':'✅ Mettre dans l\'assiette';
+  $('w-ok').textContent=editIdx>=0?'✅ Enregistrer':remoteTarget?'📤 Envoyer à '+remoteTarget.nom:'✅ Mettre dans l\'assiette';
   uw=cur.u||0;ul=cur.ul||'unité';
   $('sg-u').textContent='🔢 Unités';
   updFav();show('weight');
@@ -792,6 +797,7 @@ function openKeypad(){
   $('m-key').classList.add('on');const i=$('k-in');i.value=val;i.focus();i.select();
 }
 function okKeypad(){
+  if(keyMode==='carb'){const v=parseFloat(String($('k-in').value).replace(',','.'));if(!(v>0))return;closeM('m-key');checkItem({k:'d',n:'Glucides directs',e:'🔢',c:100,g:Math.round(v*10)/10,src:'direct'},placeItem);return}
   if(keyMode==='pin'){const raw=String($('k-in').value);closeM('m-key');resetPad();const cb=window._pincb;window._pincb=null;cb&&cb(raw);return}
   const v=parseFloat(String($('k-in').value).replace(',','.'));
   if(keyMode==='uw'){
@@ -811,16 +817,19 @@ function addToPlate(){
   checkItem(item,commitItem);
 }
 function commitItem(item){
-  if(editIdx>=0)plate[editIdx]=item;
-  else{
-    plate.push(item);
+  if(editIdx<0){
     const u=use[cur.k]||{count:0};
     use[cur.k]={n:cur.n,e:cur.e,c:cur.c,g:cur.g||weight,src:cur.src,u:uw||0,ul:ul,code:cur.code||'',count:u.count+1,last:Date.now()};
     save('mp_use',use);
   }
-  savePlate();
+  if(editIdx>=0){plate[editIdx]=item;savePlate();editIdx=-1;show('plate');return}
+  placeItem(item);
+}
+/* Met l'aliment dans MON assiette, ou l'envoie dans celle d'un autre appareil (mode « pour Sienna ») */
+function placeItem(item){
   if(navigator.vibrate)try{navigator.vibrate(40)}catch(e){}
-  editIdx=-1;show('plate');
+  if(remoteTarget){sendRemote(item);return}
+  plate.push(item);savePlate();editIdx=-1;show('plate');
 }
 
 /* ---------- LECTEUR DE CODES-BARRES EAN/UPC (maison, sans bibliothèque) ---------- */
@@ -1038,11 +1047,7 @@ function labelAdd(){
   const {ref,car,w}=xVals();if(!(ref>0)||isNaN(car)||isNaN(w))return;
   const f=xItem();
   const u=use[f.k]||{count:0};use[f.k]={n:f.n,e:f.e,c:f.c,g:w,src:'label',u:0,ul:'',count:u.count+1,last:Date.now()};save('mp_use',use);
-  checkItem({k:f.k,n:f.n,e:f.e,c:f.c,g:w,src:'label'},item=>{
-    plate.push(item);savePlate();
-    if(navigator.vibrate)try{navigator.vibrate(40)}catch(e){}
-    show('plate');
-  });
+  checkItem({k:f.k,n:f.n,e:f.e,c:f.c,g:w,src:'label'},placeItem);
 }
 function labelWheel(){
   const {ref,car,w}=xVals();
@@ -1110,8 +1115,8 @@ async function fbAdapter(){
   return {
     set:(p,d)=>F.setDoc(ref(p),d),
     del:p=>F.deleteDoc(ref(p)),
-    onCol:(p,cb,err)=>F.onSnapshot(F.query(F.collection(db,...p.split('/')),F.limit(400)),s=>cb(s.docs.map(d=>({_id:d.id,...d.data()})),s.metadata),err),
-    onDoc:(p,cb,err)=>F.onSnapshot(ref(p),s=>cb(s.exists()?s.data():null,s.metadata),err)
+    onCol:(p,cb,err)=>F.onSnapshot(F.query(F.collection(db,...p.split('/')),F.limit(400)),s=>safe(()=>cb(s.docs.map(d=>({_id:d.id,...d.data()})),s.metadata)),err),
+    onDoc:(p,cb,err)=>F.onSnapshot(ref(p),s=>safe(()=>cb(s.exists()?s.data():null,s.metadata)),err)
   };
 }
 function stopSync(){unsubs.forEach(u=>{try{u()}catch(e){}});unsubs=[];liveOthers={}}
@@ -1122,7 +1127,7 @@ function syncFail(e){
   syncUI();
 }
 const mealRid=m=>m.rid||(m.rid=String(m.id)+'-'+DEV);
-function mealDoc(m){return plain({id:m.id,t:m.t,total:m.total,appareil:m.appareil||fam.nom||'',dev:m.dev||DEV,al:m.al?1:0,items:m.items.map(x=>({n:x.n,e:x.e,c:x.c,g:x.g,q:x.q!=null?x.q:null,u:x.u||0,ul:x.ul||'',k:x.k||'',al:x.al?1:0}))})}
+function mealDoc(m){return plain({id:m.id,t:m.t,total:m.total,appareil:m.appareil||fam.nom||'',dev:m.dev||DEV,al:m.al?1:0,items:m.items.map(x=>({n:x.n,e:x.e,c:x.c,g:x.g,q:x.q!=null?x.q:null,u:x.u||0,ul:x.ul||'',k:x.k||'',al:x.al?1:0,src:x.src||'',par:x.par||''}))})}
 async function syncStart(){
   stopSync();sharedFirst=true;
   if(!fam||!syncConfigured()){syncState='off';syncUI();return}
@@ -1140,6 +1145,15 @@ async function syncStart(){
     liveOthers={};docs.forEach(d=>{if(d._id!==DEV)liveOthers[d._id]=d});
     if(viewOn('hist'))renderHist();renderLiveHint();
   },syncFail));
+  unsubs.push(FB.onCol(P+'/ajouts',docs=>{ // aliments ajoutés pour moi depuis un autre appareil
+    docs.filter(d=>d.cible===DEV&&!doneAjouts.has(d._id)).sort((a,b)=>a.t-b.t).forEach(d=>{
+      doneAjouts.add(d._id);
+      const it={...d.item,par:d.par||'un parent'};plate.push(it);
+      FB.del(P+'/ajouts/'+d._id).catch(()=>{});
+      toast('➕ '+(d.par||'Un parent')+' a ajouté '+it.e+' '+it.n,4000);
+    });
+    savePlate();if(viewOn('plate'))renderPlate();
+  },syncFail));
   unsubs.push(FB.onDoc(P+'/partage/donnees',(d,meta)=>{
     if(meta&&meta.hasPendingWrites)return;
     if(sharedFirst){ // première fois : on fusionne ce qui est sur l'appareil avec ce qui est partagé
@@ -1151,11 +1165,13 @@ async function syncStart(){
       UNITOV={...UNITOV,...(r.units||{})};
       if(r.seuils)SEUILS=r.seuils;if(r.pin)PIN=r.pin;
       save('mp_seuils',SEUILS);save('mp_pin',PIN);
+      if(r.title&&r.title.t){titleCfg=r.title;save('mp_title',titleCfg);applyTitle()}
       saveShared();return;
     }
     if(!d||!(d.maj>sharedMaj))return;
     favs=d.favs||[];custom=d.custom||[];UNITOV=d.units||{};sharedMaj=d.maj;
     if(d.seuils){SEUILS=d.seuils;save('mp_seuils',SEUILS)}if(d.pin){PIN=d.pin;save('mp_pin',PIN)}
+    if(d.title&&d.title.t){titleCfg=d.title;save('mp_title',titleCfg);applyTitle()}
     if($('m-set').classList.contains('on'))renderSetParent();renderPlate();
     save('mp_fav',favs);save('mp_custom',custom);save('mp_units',UNITOV);save('mp_shared_maj',sharedMaj);
     if(viewOn('pick'))renderGrid();
@@ -1169,23 +1185,27 @@ function pushPlate(now){
   clearTimeout(plateTimer);
   plateTimer=setTimeout(()=>{
     FB.set(famPath()+'/direct/'+DEV,plain({nom:fam.nom||'',role,maj:Date.now(),total:Math.round(plateTotal(plate)*10)/10,
-      items:plate.map(x=>({n:x.n,e:x.e,c:x.c,g:x.g,q:x.q!=null?x.q:null,ul:x.ul||'',al:x.al?1:0}))})).catch(syncFail);
+      items:plate.map(x=>({n:x.n,e:x.e,c:x.c,g:x.g,q:x.q!=null?x.q:null,u:x.u||0,ul:x.ul||'',al:x.al?1:0,src:x.src||'',par:x.par||''}))})).catch(syncFail);
   },now?0:1200);
 }
 function saveShared(){
   save('mp_fav',favs);save('mp_custom',custom);save('mp_units',UNITOV);
   if(!fam||!FB)return;
   sharedMaj=Date.now();save('mp_shared_maj',sharedMaj);
-  FB.set(famPath()+'/partage/donnees',plain({favs,custom,units:UNITOV,seuils:SEUILS,pin:PIN,maj:sharedMaj,par:DEV})).catch(syncFail);
+  FB.set(famPath()+'/partage/donnees',plain({favs,custom,units:UNITOV,seuils:SEUILS,pin:PIN,title:titleSet()?titleCfg:null,maj:sharedMaj,par:DEV})).catch(syncFail);
 }
 function syncMealAdded(m){if(fam&&FB){m.appareil=fam.nom||'';m.dev=DEV;FB.set(famPath()+'/repas/'+mealRid(m),mealDoc(m)).then(()=>{m.sync=1}).catch(syncFail)}}
 function syncMealDeleted(m){if(fam&&FB&&m.rid)FB.del(famPath()+'/repas/'+m.rid).catch(syncFail)}
 function ago(ms){const m=Math.round((Date.now()-ms)/60000);return m<1?'à l\'instant':m<60?'il y a '+m+' min':'il y a '+Math.floor(m/60)+' h'}
 function liveCards(){
-  return Object.values(liveOthers).filter(d=>d.items&&d.items.length&&Date.now()-d.maj<8*3600e3).sort((a,b)=>b.maj-a.maj).map((d,i)=>{const al=(d.total||0)>SEUILS.a||d.items.some(x=>x.al);return `<div class="hrow" style="border:3px solid ${al?'#d9631a':'#43c189'}"><button class="hh" onclick="$('lv${i}').classList.toggle('on')"><span style="font-size:34px">${al?'⚠️':'👀'}</span><span class="hl">En ce moment · ${esc(d.nom||'Appareil')}<small>${ago(d.maj)} · ${d.items.length} aliment${d.items.length>1?'s':''}</small><span class="hem">${d.items.slice(0,8).map(x=>x.e).join('')}</span></span><span class="ht">${fr(d.total||0)} g</span></button>
-    <div class="hdet" id="lv${i}">${d.items.map(x=>`<div class="l"><span>${x.al?'⚠️ ':''}${x.e} ${esc(x.n)} · ${esc(qtxt(x))}</span><b>${fr(x.g*x.c/100)} g</b></div>`).join('')}</div></div>`}).join('');
+  return Object.entries(liveOthers).filter(([id,d])=>d.role!=='suiveur'&&Date.now()-d.maj<8*3600e3&&(d.items&&d.items.length||d.role)).sort((a,b)=>b[1].maj-a[1].maj).map(([id,d],i)=>{
+    const items=d.items||[],al=(d.total||0)>SEUILS.a||items.some(x=>x.al),nom=esc(d.nom||'Appareil');
+    const add=`<button class="btn blue" style="font-size:16px;padding:10px;margin:8px 0 0" onclick="startRemote('${id}')">➕ Ajouter un aliment pour ${nom}</button>`;
+    if(!items.length)return `<div class="hrow"><div class="hh"><span style="font-size:30px">🍽️</span><span class="hl">${nom}<small>assiette vide · ${ago(d.maj)}</small></span></div>${add}</div>`;
+    return `<div class="hrow" style="border:3px solid ${al?'#d9631a':'#43c189'}"><button class="hh" onclick="$('lv${i}').classList.toggle('on')"><span style="font-size:34px">${al?'⚠️':'👀'}</span><span class="hl">En ce moment · ${nom}<small>${ago(d.maj)} · ${items.length} aliment${items.length>1?'s':''}</small><span class="hem">${items.slice(0,8).map(x=>x.e).join('')}</span></span><span class="ht">${fr(d.total||0)} g</span></button>
+    <div class="hdet" id="lv${i}">${items.map(x=>`<div class="l"><span>${x.al?'⚠️ ':''}${x.e} ${esc(x.n)} · ${esc(qtxt(x))}</span><b>${fr(x.g*x.c/100)} g</b></div>`).join('')}</div>${add}</div>`}).join('');
 }
-function renderLiveHint(){const b=$('hist-btn');if(!b)return;const base=b.dataset.base||'📖 Historique';b.textContent=Object.values(liveOthers).some(d=>d.items&&d.items.length&&Date.now()-d.maj<8*3600e3)?base+(base.includes('👀')?' •':' 👀'):base}
+function renderLiveHint(){const b=$('hist-btn');if(!b)return;const base=b.dataset.base||'📖 Historique';b.textContent=Object.values(liveOthers).some(d=>d.role!=='suiveur'&&d.items&&d.items.length&&Date.now()-d.maj<8*3600e3)?base+(base.includes('👀')?' •':' 👀'):base}
 /* Réglages : bloc « Partage famille » */
 function syncUI(){
   const box=$('fam-box');if(!box)return;
@@ -1203,6 +1223,8 @@ function syncUI(){
     <label>Code de la famille</label><div style="font-family:monospace;font-size:17px;font-weight:700;letter-spacing:1px;background:#fff;border-radius:12px;padding:8px;text-align:center">${fmtCode(fam.id)}</div>
     <button class="btn blue" style="font-size:17px;padding:11px;margin-top:8px" onclick="famInvite()">📨 Inviter un autre appareil</button>
     <label>Nom de cet appareil</label><input class="t" id="fam-dev" value="${esc(fam.nom||'')}" maxlength="30" onchange="famRename(this.value)">
+    <label>Rejoindre une autre famille avec son code</label><input class="t" id="fam-code" placeholder="XXXXX-XXXXX-XXXXX-XXXXX" autocapitalize="characters">
+    <button class="btn blue" style="font-size:16px;padding:10px;margin-top:8px" onclick="famSwitchAsk($('fam-code').value)">🔁 Changer de famille</button>
     <button class="btn small" style="width:100%;margin-top:8px" onclick="famLeave()">🚪 Quitter la famille sur cet appareil</button>`;
 }
 function famCreate(){const n=$('fam-dev').value.trim()||'Appareil';fam={id:rid(20),nom:n};save('mp_fam',fam);syncStart()}
@@ -1223,16 +1245,74 @@ async function famInvite(){
 function famFromUrl(){
   const m=location.search.match(/[?&]famille=([A-Za-z0-9-]+)/);if(!m)return;
   history.replaceState(null,'',location.pathname);
-  const c=cleanCode(m[1]);if(fam&&fam.id===c)return;
+  const c=cleanCode(m[1]);if(fam&&fam.id===c){toast('✅ Déjà dans cette famille',3000);return}
   if(!syncConfigured())return;
   if(!role){window._pendingInvite=c;return} // d'abord « Qui utilise cet appareil ? »
   showInvite(c);
 }
+function famSwitchAsk(code){
+  const c=cleanCode(code);if(c.length<20){info('Code incomplet','Le code fait 20 lettres et chiffres (les tirets ne comptent pas).');return}
+  if(fam&&fam.id===c){info('Déjà dans cette famille','');return}
+  const go=()=>ask('Quitter la famille '+fmtCode(fam.id).slice(0,5)+'… et rejoindre la famille '+fmtCode(c).slice(0,5)+'… ?',()=>famSwitch(c),'Oui, changer','Non');
+  if(locked())askPin(go);else go();
+}
+function famSwitch(c){
+  stopSync();FB=null;
+  hist=hist.filter(m=>!m.sync);save('mp_hist',hist); // l'historique de l'ancienne famille reste chez elle
+  fam={id:c,nom:(fam&&fam.nom)||'Appareil'};save('mp_fam',fam);sharedMaj=0;save('mp_shared_maj',0);
+  syncStart();syncUI();toast('🔁 Nouvelle famille rejointe',3000);
+}
 function showInvite(c){
+  if(fam){openSettings();famSwitchAsk(c);return}
   openSettings();
   const el=$('fam-code');if(el)el.value=fmtCode(c);
   info('👨‍👩‍👧 Invitation','Écris le nom de cet appareil (ex : « Téléphone de papa ») puis appuie sur « 🔗 Rejoindre ».');
 }
+
+/* ---------- AJOUT À DISTANCE : « ➕ Ajouter un aliment pour Sienna » ----------
+ L'aliment est déposé dans une file (familles/…/ajouts) ; l'appareil de l'enfant le prend et l'ajoute
+ à SON assiette. Chacun peut ajouter en même temps sans rien écraser. */
+let remoteTarget=null; const doneAjouts=new Set();
+function startRemote(id){
+  const d=liveOthers[id];if(!d)return;
+  remoteTarget={dev:id,nom:d.nom||'Appareil'};
+  openPick();
+}
+function sendRemote(item){
+  const t=remoteTarget;if(!t||!fam||!FB){info('Pas de connexion','Impossible d\'envoyer pour l\'instant.');return}
+  const id=Date.now()+'-'+DEV;
+  FB.set(famPath()+'/ajouts/'+id,plain({cible:t.dev,par:fam.nom||'Un parent',t:Date.now(),
+    item:{n:item.n,e:item.e,c:item.c,g:item.g,q:item.q!=null?item.q:null,u:item.u||0,ul:item.ul||'',k:item.k||'',src:item.src||'',al:item.al?1:0}})).catch(syncFail);
+  toast('📤 Envoyé à '+t.nom+' : '+item.e+' '+item.n,3500);
+  remoteTarget=null;editIdx=-1;openHist();
+}
+function remoteUI(){
+  const on=!!remoteTarget,bar=$('remote-bar');
+  bar.style.display=on?'block':'none';bar.textContent=on?'📤 Pour l\'assiette de '+remoteTarget.nom:'';
+  $('pick-title').textContent=on?'Pour '+remoteTarget.nom:'Quel aliment ?';
+}
+/* ---------- GLUCIDES DIRECTS (ex : pain = la moitié du poids) ---------- */
+function openDirect(){
+  resetPad();keyMode='carb';
+  $('k-t').innerHTML='🔢 Combien de grammes de glucides ?<small style="display:block;font-size:14px;font-weight:600;color:#678;margin-top:4px">Quand tu connais déjà les glucides (ex : 50 g de pain = 25 g de glucides).</small>';
+  $('m-key').classList.add('on');const i=$('k-in');i.value='';i.focus();
+}
+/* ---------- JOURNAL DES ERREURS (pour comprendre un plantage) ---------- */
+let errLog=load('mp_errs',[]);
+function logErr(m){
+  try{
+    const t=new Date().toLocaleString('fr-FR');errLog=[{t,m:String(m).slice(0,300)},...errLog].slice(0,8);save('mp_errs',errLog);
+    if(/INTERNAL ASSERTION|IndexedDB|already been started/i.test(String(m))&&Date.now()-load('mp_reload',0)>5*60e3){ // Firebase bloqué : on relance une fois
+      save('mp_reload',Date.now());toast('🔄 Petit souci de synchro, je relance…',2000);setTimeout(()=>location.reload(),1500);
+    }
+  }catch(e){}
+}
+function safe(f){try{f()}catch(e){logErr((e&&e.stack)||e)}}
+window.addEventListener('error',e=>logErr((e.error&&e.error.stack)||e.message));
+window.addEventListener('unhandledrejection',e=>logErr((e.reason&&(e.reason.stack||e.reason.message))||e.reason));
+function errUI(){const el=$('st-errs');if(!el)return;el.innerHTML=errLog.length?'<details><summary>🐞 Dernières erreurs ('+errLog.length+')</summary>'+errLog.map(x=>'<div style="margin-top:4px"><b>'+esc(x.t)+'</b><br>'+esc(x.m)+'</div>').join('')+'<button class="btn small" style="margin-top:6px" onclick="errLog=[];save(\'mp_errs\',[]);errUI()">Effacer</button></details>':''}
+/* Ouverte depuis l'icône de l'écran d'accueil : déjà en plein écran, le bouton est inutile */
+function standalone(){return (window.matchMedia&&(matchMedia('(display-mode: standalone)').matches||matchMedia('(display-mode: fullscreen)').matches))||navigator.standalone===true}
 
 /* ---------- RÔLE DE L'APPAREIL, CODE PARENT ET SEUILS D'ALERTE ----------
  Compteur enfant : note ses repas ; les réglages sont protégés par le code parent.
@@ -1367,7 +1447,7 @@ function applyIcons(){
     document.querySelector('meta[name="apple-mobile-web-app-title"]').content=titleCfg.t;
     if(/^https?:$/.test(location.protocol)){
       const base=location.href.split(/[?#]/)[0].replace(/[^/]*$/,'');
-      const mf={name:titleCfg.t,short_name:titleCfg.t.slice(0,12),lang:'fr',start_url:base,scope:base,display:'standalone',background_color:'#eef7f1',theme_color:'#2f9e6e',
+      const mf={name:titleCfg.t,short_name:titleCfg.t.slice(0,12),lang:'fr',start_url:base,scope:base,display:'fullscreen',display_override:['fullscreen','standalone'],background_color:'#eef7f1',theme_color:'#2f9e6e',
         icons:[{src:emojiIcon(192,e),sizes:'192x192',type:'image/png'},{src:emojiIcon(512,e),sizes:'512x512',type:'image/png'}]};
       $('mf').href=URL.createObjectURL(new Blob([JSON.stringify(mf)],{type:'application/manifest+json'}));
     }
@@ -1381,14 +1461,15 @@ let titleCfg=load('mp_title',{e:'🍽️',t:'Mon assiette'}),tEmo=titleCfg.e;
 function applyTitle(){const t=(titleCfg.e?titleCfg.e+' ':'')+titleCfg.t;$('app-title').textContent=t;document.title=titleCfg.t;applyIcons()}
 function openTitle(){tEmo=titleCfg.e;$('t-in').value=titleCfg.t;renderTEmo();$('m-title').classList.add('on')}
 function renderTEmo(){$('t-emo').innerHTML=TEMO.map(e=>`<button class="${e===tEmo?'on':''}" onclick="tEmo='${e}';renderTEmo()">${e}</button>`).join('')}
-function saveTitle(){const t=$('t-in').value.trim();titleCfg={e:tEmo,t:t||'Mon assiette'};save('mp_title',titleCfg);applyTitle();closeM('m-title')}
+function saveTitle(){const t=$('t-in').value.trim();titleCfg={e:tEmo,t:t||'Mon assiette'};save('mp_title',titleCfg);applyTitle();closeM('m-title');saveShared()}
+function titleSet(){return !!titleCfg&&(titleCfg.t!=='Mon assiette'||titleCfg.e!=='🍽️')}
 
 /* ---------- PRODUITS DU COMMERCE : mise à jour automatique ----------
  Le fichier produits-off.json est à côté de l'appli sur le site (fabriqué par GitHub depuis Open Food Facts).
  À l'ouverture, avec internet, l'appli vérifie (au plus toutes les 12 h) s'il a changé et le recharge en arrière-plan. */
 function fmtDate(d){const x=new Date(d);return isNaN(x)?String(d):x.toLocaleDateString('fr-FR')}
 function toast(t,ms){const e=$('toast');e.textContent=t;e.style.display=t?'block':'none';clearTimeout(e._t);if(t&&ms)e._t=setTimeout(()=>e.style.display='none',ms)}
-function openSettings(){$('st-msg').textContent='';$('st-bar').style.width='0';renderSettings();syncUI();renderSetParent();$('m-set').classList.add('on')}
+function openSettings(){$('st-msg').textContent='';$('st-bar').style.width='0';renderSettings();syncUI();renderSetParent();errUI();$('m-set').classList.add('on')}
 function closeSettings(){unlockedUntil=0;closeM('m-set')} // on reverrouille en fermant
 function renderSettings(){
   const b=BASEINFO;
@@ -1438,6 +1519,7 @@ async function autoUpdateBase(force){
 }
 
 registerSW();
+if(standalone())$('fs-btn').style.display='none';
 applyTitle();
 if(!role&&(hist.length||plate.length)){role='enfant';save('mp_role',role)}
 if(role){applyRole();if(role==='suiveur')openHist();if(!load('mp_guide_vu',0))openGuide()}
