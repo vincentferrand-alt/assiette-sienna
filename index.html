@@ -6,7 +6,11 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Mon assiette">
-<meta name="theme-color" content="#2f9e6e">
+<meta name="theme-color" content="#2f9e6e" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#12201a" media="(prefers-color-scheme: dark)">
+<meta name="color-scheme" content="light dark">
+<link rel="manifest" href="manifest.webmanifest" id="mf">
+<link rel="apple-touch-icon" href="icon-192.png">
 <title>Mon assiette</title>
 <style>
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -129,6 +133,62 @@ h1{margin:0;font-size:clamp(19px,5vw,26px);flex:1;line-height:1.15}
 #s-msg{font-size:15px;font-weight:600;min-height:40px;margin-bottom:4px}
 .prog{height:16px;background:#e1ece5;border-radius:10px;overflow:hidden;margin:10px 0}
 .prog i{display:block;height:100%;width:0;background:#2fb36f;transition:width .3s}
+.btn.ghost{background:#fff;color:#245;box-shadow:0 3px 0 #cfe3d6;font-size:18px;padding:12px}
+.setbox{text-align:left;background:#f3f8f5;border-radius:16px;padding:10px 12px;margin:10px 0}
+.setbox small{display:block;color:#678;font-size:13px;margin-top:4px}
+.rolebtn{display:block;width:100%;text-align:left;background:#fff;border:3px solid transparent;border-radius:16px;padding:8px 10px 8px 52px;margin-top:8px;position:relative;box-shadow:0 2px 0 #d5e7db}
+.rolebtn span{position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:30px}
+.rolebtn b{display:block;font-size:17px}.rolebtn small{display:block;font-size:13px;color:#678;margin:0}
+.rolebtn.on{border-color:#2fb36f;background:#eafaf1}
+.srow2{display:flex;align-items:center;gap:8px;margin-top:8px}
+.srow2 span{flex:1;font-size:15px;font-weight:600}
+.srow2 input{width:90px;font-size:19px;font-weight:700;text-align:center;border:2px solid #cfe3d6;border-radius:12px;padding:6px}
+.srow2 em{font-style:normal;font-weight:700;color:#567}
+.total.al{background:linear-gradient(135deg,#d9631a,#f08a3c);box-shadow:0 4px 0 #a8480f}
+.alm,.hrow .ht.alm{color:#e8702a!important}
+.day{display:flex;justify-content:space-between;font-weight:800;color:#456;margin:14px 4px 6px;font-size:16px;border-bottom:3px solid #cfe3d6;padding-bottom:3px}
+.today{background:#e6f6ed;border-radius:18px;padding:10px 14px;margin-bottom:10px;font-weight:700;font-size:17px;text-align:center}
+.today b{font-size:28px;color:#1f7a53;display:block}
+.gi{min-height:170px;display:flex;align-items:center;justify-content:center;margin-bottom:6px}
+.gi-grid{display:grid;grid-template-columns:repeat(3,64px);gap:8px}
+.gi-grid span{background:#f3f8f5;border-radius:16px;font-size:40px;height:64px;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 0 #d5e7db}
+.gi-grid .gi-plus{background:#ff8a2a}
+.gi-wheel{width:200px;text-align:center;font-size:30px;font-weight:800;color:#8aa}
+.gi-wheel div{padding:6px}.gi-wheel .on{border:4px solid #ff8a2a;border-radius:16px;color:#233;background:#fff3df}
+.gi-total{background:linear-gradient(135deg,#2f9e6e,#43c189);color:#fff;border-radius:24px;padding:16px 34px;text-align:center}
+.gi-total.al{background:linear-gradient(135deg,#d9631a,#f08a3c)}
+.gi-total small{font-size:17px}.gi-total b{display:block;font-size:52px}
+.gdots{display:flex;gap:8px;justify-content:center;margin:6px 0}
+.gdots i{width:10px;height:10px;border-radius:50%;background:#cfe3d6}.gdots i.on{background:#2fb36f}
+body.compact .card .e{font-size:34px}body.compact .card{padding:8px 4px;font-size:14px}
+body.compact .grid{grid-template-columns:repeat(auto-fill,minmax(105px,1fr))}
+body.compact .row .em{font-size:28px}body.compact .row .mid{font-size:16px}
+body.compact .hrow{padding:8px 10px}body.compact .hrow .hl{font-size:15px}body.compact .hrow .ht{font-size:21px}
+body.compact .total .big{font-size:clamp(36px,7vh,52px)}
+/* ---------- MODE SOMBRE (suit le réglage de l'appareil) ---------- */
+@media (prefers-color-scheme: dark){
+  html,body{background:#0f1a15;color:#e3ece7}
+  .back,.hbtn,.row,.card,.cat:not(.on),.tool,.box,.numbtn,.fine button,.fav,.seg button,.emojis button,.hrow,.rolebtn,.btn.ghost,.btn.small,.xmark,.gi-grid span{background:#1b2a23;color:#e3ece7;box-shadow:0 2px 0 #0a120e}
+  .row .mid,.card,.cat:not(.on),.tool,.numbtn,.wtitle b,h1,h2{color:#e3ece7}
+  .row .mid small,.card small,.wtitle small,.hrow .hl small,.note,.empty,.foot,.numbtn i,.setbox small,.rolebtn small,.box label,.cell .u,.srow2 em{color:#9fb3a8}
+  .search,.box input.t,.box input.big,.srow2 input,.cell input{background:#0f1a15;color:#e3ece7;border-color:#2e4238}
+  .sec,.day{color:#b7c9bf;border-color:#2e4238}
+  .row .c,.hrow .ht,.today b{color:#5fd39a}
+  .res,.cell.c,.seg button.on,.emojis button.on,.gi-wheel .on{background:#3a2a17;color:#e3ece7}
+  .warn{background:#3a3214;border-color:#8a6d16;color:#f0e2b0}
+  .cell.a,.cell.b{background:#1c2c44}
+  .setbox,#fam-box,.today{background:#16241e!important}
+  .rolebtn.on{background:#173a28;border-color:#2fb36f}
+  .fav.on{background:#3a3214}
+  .uwbtn{background:#1c2c44;color:#cfe0ff}
+  .row .del{background:#4a2323}
+  .wheel div{color:#6f8a7e}.band{background:rgba(255,138,42,.12)}
+  .prog,.gdots i{background:#2e4238}
+  .hdet{border-color:#2e4238}
+  .modal{background:rgba(0,0,0,.65)}
+  #fam-box div[style*="monospace"]{background:#0f1a15!important}
+  a{color:#7fb6ff}
+}
 @media (max-height:700px){.wtitle small,.numbtn i{display:none}.seg button{padding:5px}.fine button{padding:5px 14px}.total small{font-size:15px}.btn{margin-bottom:6px}}
 </style>
 </head>
@@ -137,7 +197,7 @@ h1{margin:0;font-size:clamp(19px,5vw,26px);flex:1;line-height:1.15}
 
 <!-- ASSIETTE -->
 <section class="view on" id="v-plate">
-  <div class="top"><h1 id="app-title" onclick="openTitle()" style="cursor:pointer">🍽️ Mon assiette</h1></div>
+  <div class="top"><h1 id="app-title" onclick="if(!locked())openTitle()" style="cursor:pointer">🍽️ Mon assiette</h1></div>
   <div class="hbar">
     <button class="hbtn" id="hist-btn" onclick="openHist()">📖 Historique</button>
     <button class="hbtn" onclick="toggleFS()">⛶ Plein écran</button>
@@ -199,7 +259,7 @@ h1{margin:0;font-size:clamp(19px,5vw,26px);flex:1;line-height:1.15}
 
 <!-- HISTORIQUE -->
 <section class="view" id="v-hist">
-  <div class="top"><button class="back" onclick="show('plate')">← Retour</button><h1>📖 Mes repas</h1></div>
+  <div class="top"><button class="back" id="hist-back" onclick="show('plate')">← Retour</button><h1 id="hist-title">📖 Mes repas</h1></div>
   <div class="scroll" id="h-list"></div>
 </section>
 </div>
@@ -208,7 +268,7 @@ h1{margin:0;font-size:clamp(19px,5vw,26px);flex:1;line-height:1.15}
 <div class="modal" id="m-key"><div class="box">
   <h2 id="k-t">⚖️ Poids en grammes</h2>
   <input class="big" id="k-in" type="number" inputmode="decimal" min="0" max="2000" step="any" onkeydown="if(event.key==='Enter')okKeypad()">
-  <div class="two"><button class="btn grey" onclick="closeM('m-key')">Annuler</button><button class="btn green" onclick="okKeypad()">OK</button></div>
+  <div class="two"><button class="btn grey" onclick="closeM('m-key');resetPad()">Annuler</button><button class="btn green" onclick="okKeypad()">OK</button></div>
 </div></div>
 
 <!-- MODAL CONFIRM / INFO -->
@@ -241,7 +301,8 @@ h1{margin:0;font-size:clamp(19px,5vw,26px);flex:1;line-height:1.15}
 <!-- MODAL BASE PRODUITS -->
 <div class="modal" id="m-set"><div class="box">
   <h2>⚙️ Réglages</h2>
-  <button class="btn" style="font-size:18px;padding:12px;background:#fff;color:#245;box-shadow:0 3px 0 #cfe3d6" onclick="closeSettings();openTitle()">✏️ Changer le titre de l'appli</button>
+  <button class="btn ghost" onclick="closeSettings();openGuide()">❓ Comment ça marche</button>
+  <div id="set-parent"></div>
   <div id="fam-box" style="text-align:left;background:#f3f8f5;border-radius:16px;padding:10px 12px;margin:10px 0"></div>
   <p id="st-info" style="margin-top:14px"></p>
   <div class="prog"><i id="st-bar"></i></div>
@@ -257,7 +318,15 @@ h1{margin:0;font-size:clamp(19px,5vw,26px);flex:1;line-height:1.15}
   <input class="t" id="t-in" maxlength="40" placeholder="L'assiette de …" style="margin-top:8px">
   <div class="two"><button class="btn grey" onclick="closeM('m-title')">Annuler</button><button class="btn green" onclick="saveTitle()">OK</button></div>
 </div></div>
-<div id="toast" style="display:none;position:fixed;left:50%;bottom:max(14px,env(safe-area-inset-bottom));transform:translateX(-50%);background:#233;color:#fff;border-radius:16px;padding:8px 14px;font-size:14px;font-weight:600;z-index:30;max-width:92vw;text-align:center"></div>
+<div class="modal" id="m-guide"><div class="box">
+  <div id="g-body"></div>
+  <div class="two"><button class="btn grey" onclick="closeM('m-guide');save('mp_guide_vu',1)">Passer</button><button class="btn green" id="g-next" onclick="guideNext()">Suivant →</button></div>
+</div></div>
+<div class="modal" id="m-role"><div class="box">
+  <h2>👋 Bienvenue !</h2><p>Qui utilise cet appareil ?</p>
+  <div id="r-body"></div>
+</div></div>
+<div id="toast" style="display:none;position:fixed;left:50%;top:max(10px,env(safe-area-inset-top));transform:translateX(-50%);background:#233;color:#fff;border-radius:16px;padding:8px 14px;font-size:14px;font-weight:600;z-index:30;max-width:92vw;text-align:center"></div>
 
 <script>
 /* ---------- DONNÉES ----------
@@ -384,9 +453,10 @@ function qtxt(p){return p.q!=null&&p.u?`${fr(p.q)} × ${p.ul||'unité'} · ${fr(
 function renderPlate(){
   let tot=0;
   $('list').innerHTML=plate.length?plate.map((p,i)=>{const c=p.g*p.c/100;tot+=c;
-    return `<div class="row"><span class="em">${p.e}</span><button class="mid" onclick="editItem(${i})">${esc(p.n)}<small>${esc(qtxt(p))} · toucher pour changer</small></button><span class="c">${fr(c)} g</span><button class="del" onclick="delItem(${i})">🗑️</button></div>`}).join('')
+    return `<div class="row"><span class="em">${p.e}</span><button class="mid" onclick="editItem(${i})">${p.al?'<span class="alm">⚠️</span> ':''}${esc(p.n)}<small>${esc(qtxt(p))} · toucher pour changer</small></button><span class="c">${fr(c)} g</span><button class="del" onclick="delItem(${i})">🗑️</button></div>`}).join('')
    :`<div class="empty"><b>🍽️</b>L'assiette est vide.<br>Appuie sur « Ajouter un aliment » !</div>`;
   $('tot').textContent=fr(tot);
+  document.querySelector('#v-plate .total').classList.toggle('al',tot>SEUILS.a);
   $('p-done').disabled=!plate.length;
 }
 function plateTotal(items){return items.reduce((s,p)=>s+p.g*p.c/100,0)}
@@ -395,9 +465,10 @@ function clearPlate(){if(!plate.length)return;ask('Vider l\'assiette sans l\'enr
 function mealLabel(d){const h=d.getHours();return h<10?['🥐','Petit-déjeuner']:h<15?['🍝','Déjeuner']:h<18?['🍪','Goûter']:['🌙','Dîner']}
 function finishMeal(){
   if(!plate.length)return;
-  const t=plateTotal(plate);
-  ask('Enregistrer ce repas ('+fr(t)+' g de glucides) et vider l\'assiette ?',()=>{
-    hist.unshift({id:Date.now(),t:new Date().toISOString(),items:plate.map(p=>({...p})),total:Math.round(t*10)/10});
+  const t=plateTotal(plate),big=t>SEUILS.a;
+  const msg=big?'⚠️ Ce repas fait '+fr(t)+' g de glucides, plus que d\'habitude (maximum '+fr(SEUILS.a)+' g). Tout est juste ?':'Enregistrer ce repas ('+fr(t)+' g de glucides) et vider l\'assiette ?';
+  ask(msg,()=>{
+    hist.unshift({id:Date.now(),t:new Date().toISOString(),items:plate.map(p=>({...p})),total:Math.round(t*10)/10,al:big||plate.some(p=>p.al)?1:0});
     syncMealAdded(hist[0]);
     hist=hist.slice(0,300);save('mp_hist',hist);
     plate=[];savePlate();renderPlate();
@@ -684,7 +755,7 @@ async function setMode(m){
 }
 function unitName(){return cur.ul&&cur.ul!=='portion'?cur.ul:'unité'}
 function askUW(cb){
-  keyMode='uw';window._uwcb=cb;
+  resetPad();keyMode='uw';window._uwcb=cb;
   $('k-t').innerHTML='⚖️ Combien de grammes pour <u>1</u> '+esc(unitName())+(unitName()==='unité'?' (1 biscuit, 1 part…)':'')+' ?<small style="display:block;font-size:15px;font-weight:600;color:#678;margin-top:4px">En grammes. Regarde sur le paquet (ex. « 1 biscuit = 17 g ») ou pèse-le.</small>';
   $('m-key').classList.add('on');const i=$('k-in');i.value=uw>0?uw:'';i.focus();
 }
@@ -717,10 +788,11 @@ function setVal(v,fromWheel){
 }
 function nudge(d){setVal(val+d,false)}
 function openKeypad(){
-  keyMode='w';$('k-t').textContent=mode==='g'?'⚖️ Poids en grammes':'🔢 Combien de '+unitName()+' ?';
+  resetPad();keyMode='w';$('k-t').textContent=mode==='g'?'⚖️ Poids en grammes':'🔢 Combien de '+unitName()+' ?';
   $('m-key').classList.add('on');const i=$('k-in');i.value=val;i.focus();i.select();
 }
 function okKeypad(){
+  if(keyMode==='pin'){const raw=String($('k-in').value);closeM('m-key');resetPad();const cb=window._pincb;window._pincb=null;cb&&cb(raw);return}
   const v=parseFloat(String($('k-in').value).replace(',','.'));
   if(keyMode==='uw'){
     if(!(v>0))return;
@@ -736,6 +808,9 @@ function okKeypad(){
 function addToPlate(){
   const item={k:cur.k,n:cur.n,e:cur.e,c:cur.c,g:Math.round(weight*10)/10,src:cur.src,u:uw||0,ul:ul,code:cur.code||''};
   if(mode==='u'&&uw>0)item.q=val;
+  checkItem(item,commitItem);
+}
+function commitItem(item){
   if(editIdx>=0)plate[editIdx]=item;
   else{
     plate.push(item);
@@ -963,9 +1038,11 @@ function labelAdd(){
   const {ref,car,w}=xVals();if(!(ref>0)||isNaN(car)||isNaN(w))return;
   const f=xItem();
   const u=use[f.k]||{count:0};use[f.k]={n:f.n,e:f.e,c:f.c,g:w,src:'label',u:0,ul:'',count:u.count+1,last:Date.now()};save('mp_use',use);
-  plate.push({k:f.k,n:f.n,e:f.e,c:f.c,g:w,src:'label'});savePlate();
-  if(navigator.vibrate)try{navigator.vibrate(40)}catch(e){}
-  show('plate');
+  checkItem({k:f.k,n:f.n,e:f.e,c:f.c,g:w,src:'label'},item=>{
+    plate.push(item);savePlate();
+    if(navigator.vibrate)try{navigator.vibrate(40)}catch(e){}
+    show('plate');
+  });
 }
 function labelWheel(){
   const {ref,car,w}=xVals();
@@ -977,13 +1054,21 @@ function labelWheel(){
 function openHist(){renderHist();show('hist')}
 function renderHist(){
   const live=liveCards();
-  if(!hist.length){$('h-list').innerHTML=live+'<div class="empty"><b>📖</b>Pas encore de repas enregistré.<br>Appuie sur « Repas terminé » pour en garder un ici.</div>';return}
-  $('h-list').innerHTML=live+hist.map((m,i)=>{
-    const d=new Date(m.t),[em,lab]=mealLabel(d);
-    const ds=d.toLocaleDateString('fr-FR',{weekday:'short',day:'numeric',month:'short'})+' · '+d.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})+(m.appareil&&m.dev&&m.dev!==DEV?' · 📱 '+esc(m.appareil):'');
-    return `<div class="hrow"><button class="hh" onclick="$('hd${i}').classList.toggle('on')"><span style="font-size:34px">${em}</span><span class="hl">${lab}<small>${ds}</small><span class="hem">${m.items.slice(0,8).map(x=>x.e).join('')}</span></span><span class="ht">${fr(m.total)} g</span></button>
-    <div class="hdet" id="hd${i}">${m.items.map(x=>`<div class="l"><span>${x.e} ${esc(x.n)} · ${esc(qtxt(x))}</span><b>${fr(x.g*x.c/100)} g</b></div>`).join('')}
-    <div class="two"><button class="btn green" onclick="reuseMeal(${i})">↩️ Remettre dans l'assiette</button><button class="btn grey" onclick="delMeal(${i})">🗑️</button></div></div></div>`}).join('');
+  const dayKey=d=>d.toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'});
+  const today=dayKey(new Date()),tm=hist.filter(m=>dayKey(new Date(m.t))===today);
+  const sum=role==='suiveur'||role==='adulte'?`<div class="today">Aujourd'hui · ${tm.length} repas<b>${fr(tm.reduce((s,m)=>s+(m.total||0),0))} g de glucides</b></div>`:'';
+  if(!hist.length){$('h-list').innerHTML=live+sum+'<div class="empty"><b>📖</b>Pas encore de repas enregistré.<br>Appuie sur « Repas terminé » pour en garder un ici.</div>';return}
+  const totals={};hist.forEach(m=>{const k=dayKey(new Date(m.t));totals[k]=(totals[k]||0)+(m.total||0)});
+  let last='',h='';
+  hist.forEach((m,i)=>{
+    const d=new Date(m.t),[em,lab]=mealLabel(d),k=dayKey(d);
+    if(k!==last){last=k;h+=`<div class="day"><span>${k===today?'Aujourd\'hui':k.charAt(0).toUpperCase()+k.slice(1)}</span><span>${fr(totals[k])} g</span></div>`}
+    const ds=d.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})+(m.appareil&&m.dev&&m.dev!==DEV?' · 📱 '+esc(m.appareil):'');
+    h+=`<div class="hrow"><button class="hh" onclick="$('hd${i}').classList.toggle('on')"><span style="font-size:34px">${m.al?'⚠️':em}</span><span class="hl">${lab}<small>${ds}</small><span class="hem">${m.items.slice(0,8).map(x=>x.e).join('')}</span></span><span class="ht${m.al?' alm':''}">${fr(m.total)} g</span></button>
+    <div class="hdet" id="hd${i}">${m.items.map(x=>`<div class="l"><span>${x.al?'⚠️ ':''}${x.e} ${esc(x.n)} · ${esc(qtxt(x))}</span><b>${fr(x.g*x.c/100)} g</b></div>`).join('')}
+    <div class="two"><button class="btn green" onclick="reuseMeal(${i})">↩️ Remettre dans l'assiette</button><button class="btn grey" onclick="delMeal(${i})">🗑️</button></div></div></div>`;
+  });
+  $('h-list').innerHTML=live+sum+h;
 }
 function reuseMeal(i){
   const go=()=>{plate=plate.concat(hist[i].items.map(x=>({...x})));savePlate();show('plate')};
@@ -1033,11 +1118,11 @@ function stopSync(){unsubs.forEach(u=>{try{u()}catch(e){}});unsubs=[];liveOthers
 function syncFail(e){
   syncState='erreur';
   const c=e&&(e.code||e.message)||'';
-  syncErr=/permission/i.test(c)?'Accès refusé : vérifie les règles Firestore (voir le guide).':/auth|operation-not-allowed|admin-restricted/i.test(c)?'Connexion refusée : active la connexion « Anonyme » dans Firebase (voir le guide).':'Pas de connexion pour l\'instant ('+c+').';
+  syncErr=(/permission/i.test(c)?'Accès refusé : vérifie les règles Firestore.':/admin-restricted|operation-not-allowed|configuration-not-found/i.test(c)?'Connexion refusée : active la connexion « Anonyme » dans Firebase.':/network|unavailable|failed to fetch|import/i.test(c)?'Pas de connexion pour l\'instant.':'Erreur Firebase.')+' (code : '+c+')';
   syncUI();
 }
 const mealRid=m=>m.rid||(m.rid=String(m.id)+'-'+DEV);
-function mealDoc(m){return plain({id:m.id,t:m.t,total:m.total,appareil:m.appareil||fam.nom||'',dev:m.dev||DEV,items:m.items.map(x=>({n:x.n,e:x.e,c:x.c,g:x.g,q:x.q!=null?x.q:null,u:x.u||0,ul:x.ul||'',k:x.k||''}))})}
+function mealDoc(m){return plain({id:m.id,t:m.t,total:m.total,appareil:m.appareil||fam.nom||'',dev:m.dev||DEV,al:m.al?1:0,items:m.items.map(x=>({n:x.n,e:x.e,c:x.c,g:x.g,q:x.q!=null?x.q:null,u:x.u||0,ul:x.ul||'',k:x.k||'',al:x.al?1:0}))})}
 async function syncStart(){
   stopSync();sharedFirst=true;
   if(!fam||!syncConfigured()){syncState='off';syncUI();return}
@@ -1064,10 +1149,14 @@ async function syncStart(){
       favs=[...(r.favs||[]),...favs.filter(f=>!fk.has(f.k))];
       custom=[...(r.custom||[]),...custom.filter(f=>!ck.has(f.n))];
       UNITOV={...UNITOV,...(r.units||{})};
+      if(r.seuils)SEUILS=r.seuils;if(r.pin)PIN=r.pin;
+      save('mp_seuils',SEUILS);save('mp_pin',PIN);
       saveShared();return;
     }
     if(!d||!(d.maj>sharedMaj))return;
     favs=d.favs||[];custom=d.custom||[];UNITOV=d.units||{};sharedMaj=d.maj;
+    if(d.seuils){SEUILS=d.seuils;save('mp_seuils',SEUILS)}if(d.pin){PIN=d.pin;save('mp_pin',PIN)}
+    if($('m-set').classList.contains('on'))renderSetParent();renderPlate();
     save('mp_fav',favs);save('mp_custom',custom);save('mp_units',UNITOV);save('mp_shared_maj',sharedMaj);
     if(viewOn('pick'))renderGrid();
   },syncFail));
@@ -1079,25 +1168,24 @@ function pushPlate(now){
   if(!fam||!FB)return;
   clearTimeout(plateTimer);
   plateTimer=setTimeout(()=>{
-    FB.set(famPath()+'/direct/'+DEV,plain({nom:fam.nom||'',maj:Date.now(),total:Math.round(plateTotal(plate)*10)/10,
-      items:plate.map(x=>({n:x.n,e:x.e,c:x.c,g:x.g,q:x.q!=null?x.q:null,ul:x.ul||''}))})).catch(syncFail);
+    FB.set(famPath()+'/direct/'+DEV,plain({nom:fam.nom||'',role,maj:Date.now(),total:Math.round(plateTotal(plate)*10)/10,
+      items:plate.map(x=>({n:x.n,e:x.e,c:x.c,g:x.g,q:x.q!=null?x.q:null,ul:x.ul||'',al:x.al?1:0}))})).catch(syncFail);
   },now?0:1200);
 }
 function saveShared(){
   save('mp_fav',favs);save('mp_custom',custom);save('mp_units',UNITOV);
   if(!fam||!FB)return;
   sharedMaj=Date.now();save('mp_shared_maj',sharedMaj);
-  FB.set(famPath()+'/partage/donnees',plain({favs,custom,units:UNITOV,maj:sharedMaj,par:DEV})).catch(syncFail);
+  FB.set(famPath()+'/partage/donnees',plain({favs,custom,units:UNITOV,seuils:SEUILS,pin:PIN,maj:sharedMaj,par:DEV})).catch(syncFail);
 }
 function syncMealAdded(m){if(fam&&FB){m.appareil=fam.nom||'';m.dev=DEV;FB.set(famPath()+'/repas/'+mealRid(m),mealDoc(m)).then(()=>{m.sync=1}).catch(syncFail)}}
 function syncMealDeleted(m){if(fam&&FB&&m.rid)FB.del(famPath()+'/repas/'+m.rid).catch(syncFail)}
 function ago(ms){const m=Math.round((Date.now()-ms)/60000);return m<1?'à l\'instant':m<60?'il y a '+m+' min':'il y a '+Math.floor(m/60)+' h'}
 function liveCards(){
-  return Object.values(liveOthers).filter(d=>d.items&&d.items.length&&Date.now()-d.maj<8*3600e3).sort((a,b)=>b.maj-a.maj).map((d,i)=>
-    `<div class="hrow" style="border:3px solid #43c189"><button class="hh" onclick="$('lv${i}').classList.toggle('on')"><span style="font-size:34px">👀</span><span class="hl">En ce moment · ${esc(d.nom||'Appareil')}<small>${ago(d.maj)} · ${d.items.length} aliment${d.items.length>1?'s':''}</small><span class="hem">${d.items.slice(0,8).map(x=>x.e).join('')}</span></span><span class="ht">${fr(d.total||0)} g</span></button>
-    <div class="hdet" id="lv${i}">${d.items.map(x=>`<div class="l"><span>${x.e} ${esc(x.n)} · ${esc(qtxt(x))}</span><b>${fr(x.g*x.c/100)} g</b></div>`).join('')}</div></div>`).join('');
+  return Object.values(liveOthers).filter(d=>d.items&&d.items.length&&Date.now()-d.maj<8*3600e3).sort((a,b)=>b.maj-a.maj).map((d,i)=>{const al=(d.total||0)>SEUILS.a||d.items.some(x=>x.al);return `<div class="hrow" style="border:3px solid ${al?'#d9631a':'#43c189'}"><button class="hh" onclick="$('lv${i}').classList.toggle('on')"><span style="font-size:34px">${al?'⚠️':'👀'}</span><span class="hl">En ce moment · ${esc(d.nom||'Appareil')}<small>${ago(d.maj)} · ${d.items.length} aliment${d.items.length>1?'s':''}</small><span class="hem">${d.items.slice(0,8).map(x=>x.e).join('')}</span></span><span class="ht">${fr(d.total||0)} g</span></button>
+    <div class="hdet" id="lv${i}">${d.items.map(x=>`<div class="l"><span>${x.al?'⚠️ ':''}${x.e} ${esc(x.n)} · ${esc(qtxt(x))}</span><b>${fr(x.g*x.c/100)} g</b></div>`).join('')}</div></div>`}).join('');
 }
-function renderLiveHint(){const b=$('hist-btn');if(b)b.textContent=Object.values(liveOthers).some(d=>d.items&&d.items.length&&Date.now()-d.maj<8*3600e3)?'📖 Historique 👀':'📖 Historique'}
+function renderLiveHint(){const b=$('hist-btn');if(!b)return;const base=b.dataset.base||'📖 Historique';b.textContent=Object.values(liveOthers).some(d=>d.items&&d.items.length&&Date.now()-d.maj<8*3600e3)?base+(base.includes('👀')?' •':' 👀'):base}
 /* Réglages : bloc « Partage famille » */
 function syncUI(){
   const box=$('fam-box');if(!box)return;
@@ -1137,15 +1225,160 @@ function famFromUrl(){
   history.replaceState(null,'',location.pathname);
   const c=cleanCode(m[1]);if(fam&&fam.id===c)return;
   if(!syncConfigured())return;
+  if(!role){window._pendingInvite=c;return} // d'abord « Qui utilise cet appareil ? »
+  showInvite(c);
+}
+function showInvite(c){
   openSettings();
   const el=$('fam-code');if(el)el.value=fmtCode(c);
   info('👨‍👩‍👧 Invitation','Écris le nom de cet appareil (ex : « Téléphone de papa ») puis appuie sur « 🔗 Rejoindre ».');
 }
 
+/* ---------- RÔLE DE L'APPAREIL, CODE PARENT ET SEUILS D'ALERTE ----------
+ Compteur enfant : note ses repas ; les réglages sont protégés par le code parent.
+ Compteur adulte : note ses repas ; réglages libres.
+ Suiveur : suit à distance (s'ouvre sur l'écran Suivi).
+ Seuils et code parent sont partagés dans la famille (Firebase). */
+const ROLES={enfant:{e:'🧒',n:'Compteur enfant',d:'Note ses repas. Réglages protégés par le code parent.'},
+             adulte:{e:'🧑',n:'Compteur adulte',d:'Note ses repas. Réglages libres.'},
+             suiveur:{e:'👀',n:'Suiveur',d:'Suit les repas d\'un enfant à distance.'}};
+let role=load('mp_role','');
+let SEUILS=load('mp_seuils',{g:200,c:60,a:100});
+let PIN=load('mp_pin','');
+let unlockedUntil=0;
+async function pinHash(p){
+  const s='assiette:'+p;
+  if(window.crypto&&crypto.subtle){const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s));return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('')}
+  let h=0;for(const ch of s)h=(h*31+ch.charCodeAt(0))|0;return 'x'+h;
+}
+function locked(){return role==='enfant'&&!!PIN&&Date.now()>unlockedUntil}
+function saveSeuils(){save('mp_seuils',SEUILS);save('mp_pin',PIN);saveShared()}
+/* Code parent : saisie dans la fenêtre du clavier (chiffres masqués) */
+function pinPad(title,cb){
+  keyMode='pin';window._pincb=cb;
+  $('k-t').innerHTML=title;
+  const i=$('k-in');i.type='password';i.setAttribute('inputmode','numeric');i.maxLength=8;i.value='';
+  $('m-key').classList.add('on');i.focus();
+}
+function resetPad(){const i=$('k-in');i.type='number';i.setAttribute('inputmode','decimal')}
+function askPin(cb){
+  pinPad('🔒 Code parent<small style="display:block;font-size:14px;font-weight:600;color:#678;margin-top:4px">Code oublié ? Change-le depuis l\'appareil d\'un parent de la famille (Suiveur ou Compteur adulte).</small>',async v=>{
+    if(await pinHash(v)===PIN){unlockedUntil=Date.now()+10*60e3;cb&&cb()}
+    else info('Code incorrect','Ce n\'est pas le bon code parent.');
+  });
+}
+function askNewPin(cb){
+  pinPad('🔒 Choisis un code parent<small style="display:block;font-size:14px;font-weight:600;color:#678;margin-top:4px">4 chiffres ou plus, à ne pas donner à l\'enfant.</small>',v=>{
+    if(!/^\d{4,8}$/.test(v)){info('Code trop court','Il faut au moins 4 chiffres.');return}
+    pinPad('🔒 Retape le code',async v2=>{
+      if(v2!==v){info('Les deux codes sont différents','Recommence.');return}
+      PIN=await pinHash(v);if($('m-set').classList.contains('on'))unlockedUntil=Date.now()+10*60e3;saveSeuils();cb&&cb();
+    });
+  });
+}
+function setRole(r){
+  const go=()=>{role=r;save('mp_role',role);applyRole();pushPlate(true);renderSetParent()};
+  if(r==='enfant'&&!PIN){askNewPin(go);return}
+  go();
+}
+function applyRole(){
+  document.body.classList.toggle('compact',role==='adulte'||role==='suiveur');
+  const hb=$('hist-btn');if(hb)hb.dataset.base=role==='suiveur'?'👀 Suivi':'📖 Historique';
+  $('hist-title').textContent=role==='suiveur'?'👀 Suivi':'📖 Mes repas';
+  $('hist-back').textContent=role==='suiveur'?'🍽️ Compter':'← Retour';
+  renderLiveHint();
+}
+/* Réglages : partie protégée */
+function unlockSettings(){askPin(()=>{renderSetParent();syncUI()})}
+function renderSetParent(){
+  const el=$('set-parent');if(!el)return;
+  const lk=locked();
+  $('fam-box').style.display=lk?'none':'block';
+  if(lk){el.innerHTML='<button class="btn ghost" onclick="unlockSettings()">🔒 Réglages parent</button>';return}
+  const rb=Object.entries(ROLES).map(([k,r])=>`<button class="rolebtn ${role===k?'on':''}" onclick="setRole('${k}')"><span>${r.e}</span><b>${r.n}</b><small>${r.d}</small></button>`).join('');
+  el.innerHTML=`<div class="setbox"><b>📱 Cet appareil est utilisé par</b>${rb}</div>
+  <div class="setbox"><b>⚠️ Alertes quand c'est plus que d'habitude</b>
+    <div class="srow2"><span>Poids d'un aliment</span><input type="number" inputmode="decimal" value="${SEUILS.g}" onchange="setSeuil('g',this.value)"><em>g</em></div>
+    <div class="srow2"><span>Glucides d'un aliment</span><input type="number" inputmode="decimal" value="${SEUILS.c}" onchange="setSeuil('c',this.value)"><em>g</em></div>
+    <div class="srow2"><span>Glucides d'un repas</span><input type="number" inputmode="decimal" value="${SEUILS.a}" onchange="setSeuil('a',this.value)"><em>g</em></div>
+    <small>L'appli demande « Tu as bien vérifié ? » et l'alerte ⚠️ s'affiche chez les Suiveurs.</small>
+    <button class="btn ghost" style="margin-top:8px" onclick="askNewPin(()=>info('✅ Code parent enregistré',''))">🔒 ${PIN?'Changer':'Créer'} le code parent</button></div>
+  <button class="btn ghost" onclick="closeSettings();openTitle()">✏️ Changer le titre et l'icône</button>`;
+}
+function setSeuil(k,v){const n=parseFloat(String(v).replace(',','.'));if(n>0){SEUILS={...SEUILS,[k]:n};saveSeuils()}}
+/* Vérification d'un aliment avant de le mettre dans l'assiette */
+function checkItem(item,ok){
+  const carbs=item.g*item.c/100,why=[];
+  if(item.g>SEUILS.g)why.push(fr(item.g)+' g, c\'est plus que d\'habitude (maximum '+fr(SEUILS.g)+' g).');
+  if(carbs>SEUILS.c)why.push(fr(carbs)+' g de glucides pour un seul aliment (maximum '+fr(SEUILS.c)+' g).');
+  if(!why.length){ok(item);return}
+  info('⚠️ Vérifie bien',item.e+' '+item.n+' : '+why.join(' ')+' Tu as bien pesé ?',[
+    {t:'✏️ Corriger',f:null,c:'grey'},
+    {t:'Oui, c\'est juste',f:()=>{item.al=1;ok(item)},c:'green'}]);
+}
+/* ---------- PRISE EN MAIN ILLUSTRÉE ---------- */
+const GUIDE={
+  compteur:[
+    {i:'<div class="gi-grid"><span>🍝</span><span>🍎</span><span>🥛</span><span>🍪</span><span>🥖</span><span class="gi-plus">➕</span></div>',t:'1. Ajoute tes aliments',p:'Appuie sur « ➕ Ajouter un aliment », puis touche l\'image de ce que tu manges. Tu peux aussi chercher son nom ou scanner le code-barres 📷.'},
+    {i:'<div class="gi-wheel"><div>145</div><div class="on">150 g</div><div>155</div></div>',t:'2. Choisis le poids',p:'Tourne la roue, ou touche le grand chiffre pour écrire le poids de la balance. Pas de balance ? Choisis « 🔢 Unités » (ex : 2 biscuits).'},
+    {i:'<div class="gi-total"><small>Total de glucides</small><b>47 g</b></div>',t:'3. Repas terminé',p:'Le total de glucides s\'affiche en haut. À la fin du repas, appuie sur « ✅ Repas terminé » pour le garder dans l\'historique.'}],
+  suiveur:[
+    {i:'<div class="gi-total"><small>👀 En ce moment</small><b>32 g</b></div>',t:'1. En direct',p:'L\'écran Suivi montre ce que l\'enfant est en train de mettre dans son assiette, avec le total de glucides.'},
+    {i:'<div class="gi-grid"><span>🥐</span><span>🍝</span><span>🍪</span><span>🌙</span></div>',t:'2. Les repas du jour',p:'Chaque repas terminé s\'ajoute, avec le total de la journée. Touche un repas pour voir le détail.'},
+    {i:'<div class="gi-total al"><small>⚠️ Plus que d\'habitude</small><b>250 g</b></div>',t:'3. Les alertes',p:'Si un poids ou des glucides dépassent les seuils fixés dans ⚙️ Réglages, l\'enfant doit confirmer et un ⚠️ s\'affiche ici.'}]
+};
+let gStep=0,gList=[];
+function openGuide(){gList=GUIDE[role==='suiveur'?'suiveur':'compteur'];gStep=0;renderGuide();$('m-guide').classList.add('on')}
+function renderGuide(){
+  const s=gList[gStep],last=gStep===gList.length-1;
+  $('g-body').innerHTML=`<div class="gi">${s.i}</div><h2>${s.t}</h2><p>${s.p}</p><div class="gdots">${gList.map((_,i)=>`<i class="${i===gStep?'on':''}"></i>`).join('')}</div>`;
+  $('g-next').textContent=last?'C\'est parti !':'Suivant →';
+}
+function guideNext(){if(gStep<gList.length-1){gStep++;renderGuide()}else{closeM('m-guide');save('mp_guide_vu',1)}}
+/* Premier lancement : qui utilise cet appareil ? */
+function openRolePick(){
+  $('r-body').innerHTML=Object.entries(ROLES).map(([k,r])=>`<button class="rolebtn" onclick="firstRole('${k}')"><span>${r.e}</span><b>${r.n}</b><small>${r.d}</small></button>`).join('');
+  $('m-role').classList.add('on');
+}
+function firstRole(r){
+  closeM('m-role');
+  const done=()=>{role=r;save('mp_role',role);applyRole();if(role==='suiveur')openHist();const inv=window._pendingInvite;window._pendingInvite=null;if(inv)showInvite(inv);else openGuide()};
+  if(r==='enfant'&&!PIN){
+    info('🔒 Code parent','Un parent peut créer maintenant un code pour protéger les réglages (seuils, rôle). C\'est possible aussi plus tard dans ⚙️ Réglages.',[
+      {t:'Plus tard',f:done,c:'grey'},{t:'Créer le code',f:()=>askNewPin(done),c:'green'}]);
+    return;
+  }
+  done();
+}
+/* ---------- ICÔNE DE L'ÉCRAN D'ACCUEIL (emoji du titre) ---------- */
+function emojiIcon(size,emoji){
+  const c=document.createElement('canvas');c.width=c.height=size;const x=c.getContext('2d');
+  x.fillStyle='#2f9e6e';x.fillRect(0,0,size,size);
+  x.font=Math.round(size*.6)+'px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif';
+  x.textAlign='center';x.textBaseline='middle';x.fillText(emoji,size/2,size*.54);
+  return c.toDataURL('image/png');
+}
+function applyIcons(){
+  try{
+    const e=titleCfg.e||'🍽️';
+    let l=document.querySelector('link[rel="apple-touch-icon"]');
+    if(!l){l=document.createElement('link');l.rel='apple-touch-icon';document.head.appendChild(l)}
+    l.href=emojiIcon(180,e);
+    document.querySelector('meta[name="apple-mobile-web-app-title"]').content=titleCfg.t;
+    if(/^https?:$/.test(location.protocol)){
+      const base=location.href.split(/[?#]/)[0].replace(/[^/]*$/,'');
+      const mf={name:titleCfg.t,short_name:titleCfg.t.slice(0,12),lang:'fr',start_url:base,scope:base,display:'standalone',background_color:'#eef7f1',theme_color:'#2f9e6e',
+        icons:[{src:emojiIcon(192,e),sizes:'192x192',type:'image/png'},{src:emojiIcon(512,e),sizes:'512x512',type:'image/png'}]};
+      $('mf').href=URL.createObjectURL(new Blob([JSON.stringify(mf)],{type:'application/manifest+json'}));
+    }
+  }catch(err){}
+}
+function registerSW(){if('serviceWorker' in navigator&&/^https?:$/.test(location.protocol))navigator.serviceWorker.register('sw.js').catch(()=>{})}
+
 /* ---------- TITRE DE L'APPLI (chaque famille met le sien) ---------- */
 const TEMO=['🍽️','🐾','🐱','🐶','🦊','🐺','🦄','🐰','🐼','🦁','🐸','🌈','⭐','💖','⚽','🎀'];
 let titleCfg=load('mp_title',{e:'🍽️',t:'Mon assiette'}),tEmo=titleCfg.e;
-function applyTitle(){const t=(titleCfg.e?titleCfg.e+' ':'')+titleCfg.t;$('app-title').textContent=t;document.title=titleCfg.t}
+function applyTitle(){const t=(titleCfg.e?titleCfg.e+' ':'')+titleCfg.t;$('app-title').textContent=t;document.title=titleCfg.t;applyIcons()}
 function openTitle(){tEmo=titleCfg.e;$('t-in').value=titleCfg.t;renderTEmo();$('m-title').classList.add('on')}
 function renderTEmo(){$('t-emo').innerHTML=TEMO.map(e=>`<button class="${e===tEmo?'on':''}" onclick="tEmo='${e}';renderTEmo()">${e}</button>`).join('')}
 function saveTitle(){const t=$('t-in').value.trim();titleCfg={e:tEmo,t:t||'Mon assiette'};save('mp_title',titleCfg);applyTitle();closeM('m-title')}
@@ -1155,8 +1388,8 @@ function saveTitle(){const t=$('t-in').value.trim();titleCfg={e:tEmo,t:t||'Mon a
  À l'ouverture, avec internet, l'appli vérifie (au plus toutes les 12 h) s'il a changé et le recharge en arrière-plan. */
 function fmtDate(d){const x=new Date(d);return isNaN(x)?String(d):x.toLocaleDateString('fr-FR')}
 function toast(t,ms){const e=$('toast');e.textContent=t;e.style.display=t?'block':'none';clearTimeout(e._t);if(t&&ms)e._t=setTimeout(()=>e.style.display='none',ms)}
-function openSettings(){$('st-msg').textContent='';$('st-bar').style.width='0';renderSettings();syncUI();$('m-set').classList.add('on')}
-function closeSettings(){closeM('m-set')}
+function openSettings(){$('st-msg').textContent='';$('st-bar').style.width='0';renderSettings();syncUI();renderSetParent();$('m-set').classList.add('on')}
+function closeSettings(){unlockedUntil=0;closeM('m-set')} // on reverrouille en fermant
 function renderSettings(){
   const b=BASEINFO;
   $('st-info').innerHTML=b&&b.n?'🛒 <b>'+b.n.toLocaleString('fr-FR')+'</b> produits du commerce'+(b.date?' (mis à jour le '+esc(fmtDate(b.date))+')':''):'🛒 Les produits du commerce ne sont pas encore chargés.';
@@ -1204,7 +1437,11 @@ async function autoUpdateBase(force){
   }finally{updRunning=false;renderSettings()}
 }
 
+registerSW();
 applyTitle();
+if(!role&&(hist.length||plate.length)){role='enfant';save('mp_role',role)}
+if(role){applyRole();if(role==='suiveur')openHist();if(!load('mp_guide_vu',0))openGuide()}
+else openRolePick();
 syncStart();famFromUrl();
 baseLoad().then(()=>autoUpdateBase(false));
 renderPlate();
