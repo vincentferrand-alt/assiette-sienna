@@ -139,7 +139,7 @@ h1{margin:0;font-size:clamp(19px,5vw,26px);flex:1;line-height:1.15}
 <section class="view on" id="v-plate">
   <div class="top"><h1 id="app-title" onclick="openTitle()" style="cursor:pointer">🍽️ Mon assiette</h1></div>
   <div class="hbar">
-    <button class="hbtn" onclick="openHist()">📖 Historique</button>
+    <button class="hbtn" id="hist-btn" onclick="openHist()">📖 Historique</button>
     <button class="hbtn" onclick="toggleFS()">⛶ Plein écran</button>
     <button class="hbtn" onclick="openSettings()">⚙️ Réglages</button>
   </div>
@@ -242,6 +242,7 @@ h1{margin:0;font-size:clamp(19px,5vw,26px);flex:1;line-height:1.15}
 <div class="modal" id="m-set"><div class="box">
   <h2>⚙️ Réglages</h2>
   <button class="btn" style="font-size:18px;padding:12px;background:#fff;color:#245;box-shadow:0 3px 0 #cfe3d6" onclick="closeSettings();openTitle()">✏️ Changer le titre de l'appli</button>
+  <div id="fam-box" style="text-align:left;background:#f3f8f5;border-radius:16px;padding:10px 12px;margin:10px 0"></div>
   <p id="st-info" style="margin-top:14px"></p>
   <div class="prog"><i id="st-bar"></i></div>
   <p id="st-msg" style="font-size:14px;color:#567;min-height:18px"></p>
@@ -389,16 +390,17 @@ function renderPlate(){
   $('p-done').disabled=!plate.length;
 }
 function plateTotal(items){return items.reduce((s,p)=>s+p.g*p.c/100,0)}
-function delItem(i){ask('Enlever '+plate[i].n+' ?',()=>{plate.splice(i,1);save('mp_plate',plate);renderPlate()})}
-function clearPlate(){if(!plate.length)return;ask('Vider l\'assiette sans l\'enregistrer ?',()=>{plate=[];save('mp_plate',plate);renderPlate()})}
+function delItem(i){ask('Enlever '+plate[i].n+' ?',()=>{plate.splice(i,1);savePlate();renderPlate()})}
+function clearPlate(){if(!plate.length)return;ask('Vider l\'assiette sans l\'enregistrer ?',()=>{plate=[];savePlate();renderPlate()})}
 function mealLabel(d){const h=d.getHours();return h<10?['🥐','Petit-déjeuner']:h<15?['🍝','Déjeuner']:h<18?['🍪','Goûter']:['🌙','Dîner']}
 function finishMeal(){
   if(!plate.length)return;
   const t=plateTotal(plate);
   ask('Enregistrer ce repas ('+fr(t)+' g de glucides) et vider l\'assiette ?',()=>{
     hist.unshift({id:Date.now(),t:new Date().toISOString(),items:plate.map(p=>({...p})),total:Math.round(t*10)/10});
+    syncMealAdded(hist[0]);
     hist=hist.slice(0,300);save('mp_hist',hist);
-    plate=[];save('mp_plate',plate);renderPlate();
+    plate=[];savePlate();renderPlate();
   },'✅ Oui','Non');
 }
 function editItem(i){editIdx=i;const p=withUnit(plate[i]);cur={k:p.k,n:p.n,e:p.e,c:p.c,g:p.g,src:p.src,u:p.u||0,ul:p.ul||'',uh:!!p.uh,code:codeOf(p)};backTo='pick';openWeight(p.q!=null&&p.u?{units:p.q}:{grams:p.g})}
@@ -601,7 +603,7 @@ function openCustom(){['c-n','c-c','c-g'].forEach(i=>$(i).value='');$('m-cus').c
 function saveCustom(){
   const n=$('c-n').value.trim(),c=parseFloat($('c-c').value),g=parseFloat($('c-g').value)||100;
   if(!n||isNaN(c)||c<0||c>100){info('Oups','Mets un nom et des glucides entre 0 et 100 pour 100 g.');return}
-  custom.push({n,c,g,e:iconFor(n,'','✏️')});save('mp_custom',custom);closeM('m-cus');cat='moi';renderPick();
+  custom.push({n,c,g,e:iconFor(n,'','✏️')});saveShared();closeM('m-cus');cat='moi';renderPick();
 }
 
 /* ---------- POIDS / ROUE (grammes ou unités) ---------- */
@@ -688,7 +690,7 @@ function askUW(cb){
 }
 function commitUW(v,cb){
   uw=v;cur.u=v;cur.uh=true;if(!cur.ul)cur.ul='unité';ul=cur.ul;
-  UNITOV[cur.k]=[ul,v];save('mp_units',UNITOV);
+  UNITOV[cur.k]=[ul,v];saveShared();
   cb&&cb();
 }
 function editUW(){askUW(()=>{applyMode();setVal(val,false)})}
@@ -697,7 +699,7 @@ function updFav(){const on=isFav(cur.k);$('w-fav').className='fav'+(on?' on':'')
 function toggleFav(){
   if(isFav(cur.k))favs=favs.filter(f=>f.k!==cur.k);
   else favs.unshift({k:cur.k,n:cur.n,e:cur.e,c:cur.c,g:cur.g||weight,src:cur.src,u:uw||0,ul:cur.ul||'',code:cur.code||''});
-  save('mp_fav',favs);updFav();
+  saveShared();updFav();
 }
 function setVal(v,fromWheel){
   const mx=mode==='g'?2000:200;
@@ -741,7 +743,7 @@ function addToPlate(){
     use[cur.k]={n:cur.n,e:cur.e,c:cur.c,g:cur.g||weight,src:cur.src,u:uw||0,ul:ul,code:cur.code||'',count:u.count+1,last:Date.now()};
     save('mp_use',use);
   }
-  save('mp_plate',plate);
+  savePlate();
   if(navigator.vibrate)try{navigator.vibrate(40)}catch(e){}
   editIdx=-1;show('plate');
 }
@@ -961,7 +963,7 @@ function labelAdd(){
   const {ref,car,w}=xVals();if(!(ref>0)||isNaN(car)||isNaN(w))return;
   const f=xItem();
   const u=use[f.k]||{count:0};use[f.k]={n:f.n,e:f.e,c:f.c,g:w,src:'label',u:0,ul:'',count:u.count+1,last:Date.now()};save('mp_use',use);
-  plate.push({k:f.k,n:f.n,e:f.e,c:f.c,g:w,src:'label'});save('mp_plate',plate);
+  plate.push({k:f.k,n:f.n,e:f.e,c:f.c,g:w,src:'label'});savePlate();
   if(navigator.vibrate)try{navigator.vibrate(40)}catch(e){}
   show('plate');
 }
@@ -974,19 +976,171 @@ function labelWheel(){
 /* ---------- HISTORIQUE ---------- */
 function openHist(){renderHist();show('hist')}
 function renderHist(){
-  if(!hist.length){$('h-list').innerHTML='<div class="empty"><b>📖</b>Pas encore de repas enregistré.<br>Appuie sur « Repas terminé » pour en garder un ici.</div>';return}
-  $('h-list').innerHTML=hist.map((m,i)=>{
+  const live=liveCards();
+  if(!hist.length){$('h-list').innerHTML=live+'<div class="empty"><b>📖</b>Pas encore de repas enregistré.<br>Appuie sur « Repas terminé » pour en garder un ici.</div>';return}
+  $('h-list').innerHTML=live+hist.map((m,i)=>{
     const d=new Date(m.t),[em,lab]=mealLabel(d);
-    const ds=d.toLocaleDateString('fr-FR',{weekday:'short',day:'numeric',month:'short'})+' · '+d.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
+    const ds=d.toLocaleDateString('fr-FR',{weekday:'short',day:'numeric',month:'short'})+' · '+d.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})+(m.appareil&&m.dev&&m.dev!==DEV?' · 📱 '+esc(m.appareil):'');
     return `<div class="hrow"><button class="hh" onclick="$('hd${i}').classList.toggle('on')"><span style="font-size:34px">${em}</span><span class="hl">${lab}<small>${ds}</small><span class="hem">${m.items.slice(0,8).map(x=>x.e).join('')}</span></span><span class="ht">${fr(m.total)} g</span></button>
     <div class="hdet" id="hd${i}">${m.items.map(x=>`<div class="l"><span>${x.e} ${esc(x.n)} · ${esc(qtxt(x))}</span><b>${fr(x.g*x.c/100)} g</b></div>`).join('')}
     <div class="two"><button class="btn green" onclick="reuseMeal(${i})">↩️ Remettre dans l'assiette</button><button class="btn grey" onclick="delMeal(${i})">🗑️</button></div></div></div>`}).join('');
 }
 function reuseMeal(i){
-  const go=()=>{plate=plate.concat(hist[i].items.map(x=>({...x})));save('mp_plate',plate);show('plate')};
+  const go=()=>{plate=plate.concat(hist[i].items.map(x=>({...x})));savePlate();show('plate')};
   if(plate.length)ask('Ajouter ce repas à l\'assiette actuelle ?',go,'Oui, ajouter','Non');else go();
 }
-function delMeal(i){ask('Effacer ce repas de l\'historique ?',()=>{hist.splice(i,1);save('mp_hist',hist);renderHist()})}
+function delMeal(i){ask('Effacer ce repas de l\'historique ?',()=>{const m=hist[i];hist.splice(i,1);save('mp_hist',hist);syncMealDeleted(m);renderHist()})}
+
+/* ---------- PARTAGE FAMILLE (Firebase) ----------
+ Chaque famille a un code secret de 20 caractères. Les appareils qui ont ce code partagent :
+ l'historique des repas, l'assiette en cours (« en direct »), les favoris, les aliments perso et les poids d'unité.
+ Tout marche aussi hors ligne : Firebase envoie les changements dès que la connexion revient.
+ ⬇️ Colle ici la configuration de TON projet Firebase (console Firebase → Paramètres du projet → Tes applications → Config). */
+const FIREBASE_CONFIG={
+  apiKey:"AIzaSyAwQh6OAc4iy5DPiiAg6JbyzADX1tnRLY8",
+  authDomain:"assiette-sienna.firebaseapp.com",
+  projectId:"assiette-sienna",
+  storageBucket:"assiette-sienna.firebasestorage.app",
+  messagingSenderId:"696953387327",
+  appId:"1:696953387327:web:8c76ae8c065f7a406afb8a"
+};
+const FB_V='12.1.0';
+function rid(n){const a='ABCDEFGHJKLMNPQRSTUVWXYZ23456789',r=crypto.getRandomValues(new Uint8Array(n));let s='';for(const x of r)s+=a[x%a.length];return s}
+const DEV=load('mp_dev','')||(()=>{const d=rid(12);save('mp_dev',d);return d})();
+let fam=load('mp_fam',null), FB=null, syncState='off', syncErr='', unsubs=[], liveOthers={}, sharedMaj=load('mp_shared_maj',0), sharedFirst=true, plateTimer=0;
+const cleanCode=c=>String(c||'').toUpperCase().replace(/[^A-Z0-9]/g,'');
+const fmtCode=c=>(c.match(/.{1,5}/g)||[]).join('-');
+const famPath=()=>'familles/'+fam.id;
+const plain=o=>JSON.parse(JSON.stringify(o));
+function syncConfigured(){return !!(FIREBASE_CONFIG||window.__fbMock)}
+async function fbAdapter(){
+  if(window.__fbMock)return window.__fbMock;
+  const base='https://www.gstatic.com/firebasejs/'+FB_V+'/';
+  const [A,U,F]=await Promise.all([import(base+'firebase-app.js'),import(base+'firebase-auth.js'),import(base+'firebase-firestore.js')]);
+  const app=A.getApps().length?A.getApp():A.initializeApp(FIREBASE_CONFIG);
+  await U.signInAnonymously(U.getAuth(app));
+  let db;
+  try{db=F.initializeFirestore(app,{localCache:F.persistentLocalCache({tabManager:F.persistentMultipleTabManager()})})}catch(e){db=F.getFirestore(app)}
+  const ref=p=>F.doc(db,...p.split('/'));
+  return {
+    set:(p,d)=>F.setDoc(ref(p),d),
+    del:p=>F.deleteDoc(ref(p)),
+    onCol:(p,cb,err)=>F.onSnapshot(F.query(F.collection(db,...p.split('/')),F.limit(400)),s=>cb(s.docs.map(d=>({_id:d.id,...d.data()})),s.metadata),err),
+    onDoc:(p,cb,err)=>F.onSnapshot(ref(p),s=>cb(s.exists()?s.data():null,s.metadata),err)
+  };
+}
+function stopSync(){unsubs.forEach(u=>{try{u()}catch(e){}});unsubs=[];liveOthers={}}
+function syncFail(e){
+  syncState='erreur';
+  const c=e&&(e.code||e.message)||'';
+  syncErr=/permission/i.test(c)?'Accès refusé : vérifie les règles Firestore (voir le guide).':/auth|operation-not-allowed|admin-restricted/i.test(c)?'Connexion refusée : active la connexion « Anonyme » dans Firebase (voir le guide).':'Pas de connexion pour l\'instant ('+c+').';
+  syncUI();
+}
+const mealRid=m=>m.rid||(m.rid=String(m.id)+'-'+DEV);
+function mealDoc(m){return plain({id:m.id,t:m.t,total:m.total,appareil:m.appareil||fam.nom||'',dev:m.dev||DEV,items:m.items.map(x=>({n:x.n,e:x.e,c:x.c,g:x.g,q:x.q!=null?x.q:null,u:x.u||0,ul:x.ul||'',k:x.k||''}))})}
+async function syncStart(){
+  stopSync();sharedFirst=true;
+  if(!fam||!syncConfigured()){syncState='off';syncUI();return}
+  syncState='connexion';syncUI();
+  try{FB=await fbAdapter()}catch(e){syncFail(e);return}
+  const P=famPath();
+  // les repas notés avant de rejoindre la famille sont envoyés une fois
+  hist.forEach(m=>{if(!m.sync){FB.set(P+'/repas/'+mealRid(m),mealDoc(m)).catch(syncFail);m.sync=1}});save('mp_hist',hist);
+  unsubs.push(FB.onCol(P+'/repas',docs=>{
+    hist=docs.map(d=>({...d,rid:d._id,sync:1})).sort((a,b)=>a.t<b.t?1:-1).slice(0,300);
+    save('mp_hist',hist);if(viewOn('hist'))renderHist();
+    syncState='ok';syncUI();
+  },syncFail));
+  unsubs.push(FB.onCol(P+'/direct',docs=>{
+    liveOthers={};docs.forEach(d=>{if(d._id!==DEV)liveOthers[d._id]=d});
+    if(viewOn('hist'))renderHist();renderLiveHint();
+  },syncFail));
+  unsubs.push(FB.onDoc(P+'/partage/donnees',(d,meta)=>{
+    if(meta&&meta.hasPendingWrites)return;
+    if(sharedFirst){ // première fois : on fusionne ce qui est sur l'appareil avec ce qui est partagé
+      sharedFirst=false;
+      const r=d||{};
+      const fk=new Set((r.favs||[]).map(f=>f.k)),ck=new Set((r.custom||[]).map(f=>f.n));
+      favs=[...(r.favs||[]),...favs.filter(f=>!fk.has(f.k))];
+      custom=[...(r.custom||[]),...custom.filter(f=>!ck.has(f.n))];
+      UNITOV={...UNITOV,...(r.units||{})};
+      saveShared();return;
+    }
+    if(!d||!(d.maj>sharedMaj))return;
+    favs=d.favs||[];custom=d.custom||[];UNITOV=d.units||{};sharedMaj=d.maj;
+    save('mp_fav',favs);save('mp_custom',custom);save('mp_units',UNITOV);save('mp_shared_maj',sharedMaj);
+    if(viewOn('pick'))renderGrid();
+  },syncFail));
+  pushPlate(true);
+}
+function viewOn(v){const e=$('v-'+v);return e&&e.classList.contains('on')}
+function savePlate(){save('mp_plate',plate);pushPlate(false)}
+function pushPlate(now){
+  if(!fam||!FB)return;
+  clearTimeout(plateTimer);
+  plateTimer=setTimeout(()=>{
+    FB.set(famPath()+'/direct/'+DEV,plain({nom:fam.nom||'',maj:Date.now(),total:Math.round(plateTotal(plate)*10)/10,
+      items:plate.map(x=>({n:x.n,e:x.e,c:x.c,g:x.g,q:x.q!=null?x.q:null,ul:x.ul||''}))})).catch(syncFail);
+  },now?0:1200);
+}
+function saveShared(){
+  save('mp_fav',favs);save('mp_custom',custom);save('mp_units',UNITOV);
+  if(!fam||!FB)return;
+  sharedMaj=Date.now();save('mp_shared_maj',sharedMaj);
+  FB.set(famPath()+'/partage/donnees',plain({favs,custom,units:UNITOV,maj:sharedMaj,par:DEV})).catch(syncFail);
+}
+function syncMealAdded(m){if(fam&&FB){m.appareil=fam.nom||'';m.dev=DEV;FB.set(famPath()+'/repas/'+mealRid(m),mealDoc(m)).then(()=>{m.sync=1}).catch(syncFail)}}
+function syncMealDeleted(m){if(fam&&FB&&m.rid)FB.del(famPath()+'/repas/'+m.rid).catch(syncFail)}
+function ago(ms){const m=Math.round((Date.now()-ms)/60000);return m<1?'à l\'instant':m<60?'il y a '+m+' min':'il y a '+Math.floor(m/60)+' h'}
+function liveCards(){
+  return Object.values(liveOthers).filter(d=>d.items&&d.items.length&&Date.now()-d.maj<8*3600e3).sort((a,b)=>b.maj-a.maj).map((d,i)=>
+    `<div class="hrow" style="border:3px solid #43c189"><button class="hh" onclick="$('lv${i}').classList.toggle('on')"><span style="font-size:34px">👀</span><span class="hl">En ce moment · ${esc(d.nom||'Appareil')}<small>${ago(d.maj)} · ${d.items.length} aliment${d.items.length>1?'s':''}</small><span class="hem">${d.items.slice(0,8).map(x=>x.e).join('')}</span></span><span class="ht">${fr(d.total||0)} g</span></button>
+    <div class="hdet" id="lv${i}">${d.items.map(x=>`<div class="l"><span>${x.e} ${esc(x.n)} · ${esc(qtxt(x))}</span><b>${fr(x.g*x.c/100)} g</b></div>`).join('')}</div></div>`).join('');
+}
+function renderLiveHint(){const b=$('hist-btn');if(b)b.textContent=Object.values(liveOthers).some(d=>d.items&&d.items.length&&Date.now()-d.maj<8*3600e3)?'📖 Historique 👀':'📖 Historique'}
+/* Réglages : bloc « Partage famille » */
+function syncUI(){
+  const box=$('fam-box');if(!box)return;
+  if(!syncConfigured()){box.innerHTML='<b>👨‍👩‍👧 Partage famille</b><br><small>Pas encore activé : il faut coller la configuration Firebase dans l\'appli (voir le guide).</small>';return}
+  if(!fam){
+    box.innerHTML=`<b>👨‍👩‍👧 Partage famille</b><br><small>Pour voir les repas sur plusieurs appareils (enfant, parents).</small>
+      <label>Nom de cet appareil</label><input class="t" id="fam-dev" placeholder="Ex : iPad de Sienna" maxlength="30">
+      <button class="btn green" style="font-size:17px;padding:11px;margin-top:8px" onclick="famCreate()">➕ Créer une famille</button>
+      <label>Ou code reçu d'un autre appareil</label><input class="t" id="fam-code" placeholder="XXXXX-XXXXX-XXXXX-XXXXX" autocapitalize="characters">
+      <button class="btn blue" style="font-size:17px;padding:11px;margin-top:8px" onclick="famJoin($('fam-code').value)">🔗 Rejoindre</button>`;
+    return;
+  }
+  const st=syncState==='ok'?'✅ Synchronisé':syncState==='connexion'?'⏳ Connexion…':syncState==='erreur'?'⚠️ '+esc(syncErr):'—';
+  box.innerHTML=`<b>👨‍👩‍👧 Partage famille</b><br><small>${st}</small>
+    <label>Code de la famille</label><div style="font-family:monospace;font-size:17px;font-weight:700;letter-spacing:1px;background:#fff;border-radius:12px;padding:8px;text-align:center">${fmtCode(fam.id)}</div>
+    <button class="btn blue" style="font-size:17px;padding:11px;margin-top:8px" onclick="famInvite()">📨 Inviter un autre appareil</button>
+    <label>Nom de cet appareil</label><input class="t" id="fam-dev" value="${esc(fam.nom||'')}" maxlength="30" onchange="famRename(this.value)">
+    <button class="btn small" style="width:100%;margin-top:8px" onclick="famLeave()">🚪 Quitter la famille sur cet appareil</button>`;
+}
+function famCreate(){const n=$('fam-dev').value.trim()||'Appareil';fam={id:rid(20),nom:n};save('mp_fam',fam);syncStart()}
+function famJoin(code){
+  const c=cleanCode(code);if(c.length<20){info('Code incomplet','Le code fait 20 lettres et chiffres (les tirets ne comptent pas).');return}
+  const el=$('fam-dev'),n=(el&&el.value.trim())||'Appareil';
+  fam={id:c,nom:n};save('mp_fam',fam);syncStart();
+}
+function famRename(v){if(!fam)return;fam.nom=v.trim()||'Appareil';save('mp_fam',fam);pushPlate(true)}
+function famLeave(){ask('Quitter la famille sur cet appareil ? (les repas déjà notés restent ici)',()=>{stopSync();FB=null;fam=null;save('mp_fam',null);hist.forEach(m=>{delete m.sync});save('mp_hist',hist);syncState='off';syncUI();renderLiveHint()})}
+async function famInvite(){
+  const url=location.origin+location.pathname+'?famille='+fam.id;
+  const txt='Rejoins la famille dans l\'appli des glucides : '+url;
+  try{if(navigator.share){await navigator.share({title:'Invitation',text:txt,url});return}}catch(e){return}
+  try{await navigator.clipboard.writeText(url);info('📋 Lien copié','Colle-le dans un message (WhatsApp, SMS…) et ouvre-le sur l\'autre appareil.')}
+  catch(e){info('Lien d\'invitation',url)}
+}
+function famFromUrl(){
+  const m=location.search.match(/[?&]famille=([A-Za-z0-9-]+)/);if(!m)return;
+  history.replaceState(null,'',location.pathname);
+  const c=cleanCode(m[1]);if(fam&&fam.id===c)return;
+  if(!syncConfigured())return;
+  openSettings();
+  const el=$('fam-code');if(el)el.value=fmtCode(c);
+  info('👨‍👩‍👧 Invitation','Écris le nom de cet appareil (ex : « Téléphone de papa ») puis appuie sur « 🔗 Rejoindre ».');
+}
 
 /* ---------- TITRE DE L'APPLI (chaque famille met le sien) ---------- */
 const TEMO=['🍽️','🐾','🐱','🐶','🦊','🐺','🦄','🐰','🐼','🦁','🐸','🌈','⭐','💖','⚽','🎀'];
@@ -1001,7 +1155,7 @@ function saveTitle(){const t=$('t-in').value.trim();titleCfg={e:tEmo,t:t||'Mon a
  À l'ouverture, avec internet, l'appli vérifie (au plus toutes les 12 h) s'il a changé et le recharge en arrière-plan. */
 function fmtDate(d){const x=new Date(d);return isNaN(x)?String(d):x.toLocaleDateString('fr-FR')}
 function toast(t,ms){const e=$('toast');e.textContent=t;e.style.display=t?'block':'none';clearTimeout(e._t);if(t&&ms)e._t=setTimeout(()=>e.style.display='none',ms)}
-function openSettings(){$('st-msg').textContent='';$('st-bar').style.width='0';renderSettings();$('m-set').classList.add('on')}
+function openSettings(){$('st-msg').textContent='';$('st-bar').style.width='0';renderSettings();syncUI();$('m-set').classList.add('on')}
 function closeSettings(){closeM('m-set')}
 function renderSettings(){
   const b=BASEINFO;
@@ -1051,6 +1205,7 @@ async function autoUpdateBase(force){
 }
 
 applyTitle();
+syncStart();famFromUrl();
 baseLoad().then(()=>autoUpdateBase(false));
 renderPlate();
 </script>
