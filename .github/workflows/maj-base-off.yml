@@ -1,11 +1,11 @@
 name: Base Open Food Facts et site
 
 on:
-  workflow_dispatch:
+  workflow_dispatch:          # bouton « Run workflow » (onglet Actions) = mise à jour à la demande
   schedule:
-    - cron: "17 3 1 * *"
+    - cron: "17 3 1 * *"      # automatiquement le 1er de chaque mois
   push:
-    branches: [main]
+    branches: [main]          # quand tu modifies l'appli : republie le site (sans refaire la base)
 
 permissions:
   contents: write
@@ -22,12 +22,15 @@ jobs:
     timeout-minutes: 120
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+
       - name: Construire produits-off.json depuis l'export officiel Open Food Facts
         if: github.event_name != 'push' || hashFiles('produits-off.json') == ''
         run: python construire_base_off.py --out produits-off.json
+
       - name: Garder le fichier dans le dépôt
         if: github.event_name != 'push' || hashFiles('produits-off.json') == ''
         run: |
@@ -36,11 +39,14 @@ jobs:
           git add produits-off.json
           git diff --cached --quiet || git commit -m "Mise à jour de la base Open Food Facts"
           git push
+
       - name: Préparer le site
         run: |
           mkdir -p _site
-          cp index.html _site/
-          if [ -f produits-off.json ]; then cp produits-off.json _site/; fi
+          for f in index.html sw.js manifest.webmanifest icon-192.png icon-512.png produits-off.json; do
+            if [ -f "$f" ]; then cp "$f" _site/; fi
+          done
+
       - uses: actions/upload-pages-artifact@v3
         with:
           path: _site
